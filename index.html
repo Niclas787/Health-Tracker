@@ -14,6 +14,14 @@
   --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
   --radius:14px;--radius-sm:8px;
 }
+html.dark{
+  --bg:#111210;--surface:#1a1c1a;--surface2:#222422;
+  --accent:#4ade80;--accent-light:#14291e;
+  --text:#e8ebe8;--text2:#9aa09a;--text3:#5a605a;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+}
+.dark-toggle{background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);width:34px;height:34px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:background .15s}
+.dark-toggle:hover{background:var(--surface2)}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
 /* HEADER */
@@ -173,6 +181,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
     <span class="logo-text">Abendessen-Plan</span>
   </div>
   <div class="header-right">
+    <button class="dark-toggle" id="darkBtn" onclick="toggleDark()" title="Dark Mode">🌙</button>
     <button class="suggest-all-btn" id="suggestAllBtn" onclick="suggestAll()">
       <span>✨</span><span> Woche vorschlagen</span>
     </button>
@@ -1261,6 +1270,20 @@ removePerson = function(id) {
   Object.keys(plan).forEach(k => { if (plan[k].personId === id) plan[k].personId = null; });
   savePersonsToDB(); renderPersonsBar(); render();
 };
+
+/* ===================== DARK MODE ===================== */
+function toggleDark() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  document.getElementById('darkBtn').textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('wochenplan_dark', isDark ? '1' : '0');
+}
+if (localStorage.getItem('wochenplan_dark') === '1') {
+  document.documentElement.classList.add('dark');
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('darkBtn');
+    if (btn) btn.textContent = '☀️';
+  });
+}
 
 /* ===================== INIT ===================== */
 loadFromDB();
