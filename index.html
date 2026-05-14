@@ -158,7 +158,11 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .prep-steps{display:flex;flex-direction:column;gap:10px;padding:6px 0 4px}
 .prep-step{display:flex;gap:10px}
 .step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-.step-text{font-size:13px;color:var(--text);line-height:1.5}
+.add-custom-btn{width:100%;margin-top:10px;padding:9px;border:1.5px dashed var(--border2);border-radius:var(--radius-sm);background:none;color:var(--accent);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .12s}
+.add-custom-btn:hover{background:var(--accent-light)}
+.custom-field{display:flex;flex-direction:column;gap:4px}
+.custom-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-weight:500}
+.custom-badge{font-size:10px;background:var(--accent-light);color:var(--accent);padding:1px 6px;border-radius:10px;font-weight:500;margin-left:5px}
 </style>
 </head>
 <body>
@@ -208,6 +212,61 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
     </div>
     <input class="search-box" id="searchBox" placeholder="Suchen…" oninput="renderPickerList()">
     <div class="recipe-list" id="recipeList"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="add-custom-btn" style="flex:1" onclick="openCustomRecipe(null)">+ Eigenes Gericht erstellen</button>
+      <button class="add-custom-btn" style="flex:1;color:var(--text2)" onclick="openManageCustom()">✏️ Eigene verwalten</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Recipe overlay -->
+<div class="overlay" id="customOverlay" onclick="overlayClick(event,'customOverlay')">
+  <div class="picker" style="max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h3 id="customTitle">Eigenes Gericht</h3>
+      <button class="modal-close" onclick="closeCustomRecipe()">&#215;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="custom-field">
+        <label class="custom-label">Name *</label>
+        <input class="search-box" id="cName" placeholder="z.B. Omas Gulasch" style="margin-bottom:0">
+      </div>
+      <div class="custom-field">
+        <label class="custom-label">Emoji</label>
+        <input class="search-box" id="cEmoji" placeholder="🍽️" maxlength="2" style="margin-bottom:0;width:70px">
+      </div>
+      <div class="custom-field">
+        <label class="custom-label">Zubereitungszeit (Min)</label>
+        <input class="search-box" id="cTime" type="number" placeholder="45" style="margin-bottom:0;width:100px">
+      </div>
+      <div class="custom-field">
+        <label class="custom-label">Kategorie-Tags (kommagetrennt)</label>
+        <input class="search-box" id="cTags" placeholder="Fleisch, Klassisch" style="margin-bottom:0">
+      </div>
+      <div class="custom-field">
+        <label class="custom-label">Zutaten (eine pro Zeile, Format: Menge; Name)</label>
+        <textarea class="search-box" id="cIngredients" rows="5" placeholder="500 g; Hackfleisch&#10;2 Stück; Zwiebeln&#10;3 Zehen; Knoblauch" style="margin-bottom:0;resize:vertical;font-family:inherit"></textarea>
+      </div>
+      <div class="custom-field">
+        <label class="custom-label">Zubereitung (eine pro Zeile)</label>
+        <textarea class="search-box" id="cSteps" rows="5" placeholder="Zwiebeln hacken und anbraten.&#10;Hackfleisch dazugeben.&#10;Würzen und servieren." style="margin-bottom:0;resize:vertical;font-family:inherit"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-secondary" onclick="closeCustomRecipe()">Abbrechen</button>
+        <button class="btn-primary" onclick="saveCustomRecipe()">Gericht speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Custom Recipes overlay -->
+<div class="overlay" id="manageOverlay" onclick="overlayClick(event,'manageOverlay')">
+  <div class="picker" style="max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h3>Eigene Gerichte verwalten</h3>
+      <button class="modal-close" onclick="closeManageCustom()">&#215;</button>
+    </div>
+    <div id="manageList"></div>
   </div>
 </div>
 
@@ -673,7 +732,7 @@ function render() {
     const today = isToday(d);
     const key = dateKey(d);
     const entry = plan[key];
-    const recipe = entry ? RECIPES.find(r=>r.id===entry.recipeId) : null;
+    const recipe = entry ? getAllRecipes().find(r=>r.id===entry.recipeId) : null;
     const person = entry?.personId ? persons.find(p=>p.id===entry.personId) : null;
     const sug = suggestions[key];
 
@@ -759,11 +818,12 @@ function openPicker(key, dayName) {
 function closePicker() { document.getElementById('pickerOverlay').classList.remove('open'); activePickerKey=null; }
 function renderPickerList() {
   const q = document.getElementById('searchBox').value.toLowerCase();
-  const filtered = RECIPES.filter(r=>!q||r.name.toLowerCase().includes(q)||r.tags.some(t=>t.toLowerCase().includes(q)));
+  const all = getAllRecipes();
+  const filtered = all.filter(r=>!q||r.name.toLowerCase().includes(q)||r.tags.some(t=>t.toLowerCase().includes(q)));
   document.getElementById('recipeList').innerHTML = filtered.map(r=>`
     <button class="recipe-btn" onclick="pickRecipe(${r.id})">
       <span class="em">${r.em}</span>
-      <span class="rname">${r.name}</span>
+      <span class="rname">${r.name}${r.custom?'<span class="custom-badge">Eigenes</span>':''}</span>
       <span style="font-size:11px;color:var(--text3);margin-right:6px">${r.time} Min</span>
       <span class="arr">›</span>
     </button>`).join('');
@@ -780,7 +840,8 @@ function pickRecipe(id) {
 function openDetail(key) {
   activeDetailKey = key;
   const entry = plan[key];
-  const recipe = RECIPES.find(r=>r.id===entry.recipeId);
+  const recipe = getAllRecipes().find(r=>r.id===entry.recipeId);
+  if (!recipe) return;
   detailSelectedPerson = entry.personId || null;
   currentRecipeForPrep = recipe;
   prepOpen = false;
@@ -791,12 +852,14 @@ function openDetail(key) {
   document.getElementById('dTitle').textContent = recipe.name;
   document.getElementById('dMeta').textContent = `⏱ ${recipe.time} Min  •  ${recipe.tags.join(', ')}`;
 
-  document.getElementById('dIngredients').innerHTML = recipe.ingredients.map(i=>`
-    <div class="ingredient-item">
-      <span class="ing-emoji">${i.em}</span>
-      <span class="ing-name">${i.name}</span>
-      <span class="ing-amount">${i.amount}</span>
-    </div>`).join('');
+  document.getElementById('dIngredients').innerHTML = recipe.ingredients.length
+    ? recipe.ingredients.map(i=>`
+        <div class="ingredient-item">
+          <span class="ing-emoji">${i.em}</span>
+          <span class="ing-name">${i.name}</span>
+          <span class="ing-amount">${i.amount}</span>
+        </div>`).join('')
+    : '<div style="font-size:13px;color:var(--text3)">Keine Zutaten angegeben.</div>';
 
   renderPersonSelect();
   document.getElementById('detailOverlay').classList.add('open');
@@ -923,7 +986,140 @@ function suggestAll() {
   showToast('Vorschläge bereit – ✓ zum Übernehmen klicken');
 }
 
-function overlayClick(e,id){if(e.target===document.getElementById(id)){if(id==='pickerOverlay')closePicker();else closeDetail();}}
+function overlayClick(e,id){
+  if(e.target===document.getElementById(id)){
+    if(id==='pickerOverlay') closePicker();
+    else if(id==='detailOverlay') closeDetail();
+    else if(id==='customOverlay') closeCustomRecipe();
+    else if(id==='manageOverlay') closeManageCustom();
+  }
+}
+
+/* ===================== CUSTOM RECIPES ===================== */
+let customRecipes = JSON.parse(localStorage.getItem('wochenplan_custom') || '[]');
+let nextCustomId = customRecipes.length > 0 ? Math.max(...customRecipes.map(r=>r.id)) + 1 : 1000;
+let editingCustomId = null;
+
+function getAllRecipes() {
+  return [...RECIPES, ...customRecipes];
+}
+
+function saveCustomToStorage() {
+  localStorage.setItem('wochenplan_custom', JSON.stringify(customRecipes));
+}
+
+function openCustomRecipe(editId) {
+  editingCustomId = editId || null;
+  document.getElementById('customTitle').textContent = editId ? 'Gericht bearbeiten' : 'Eigenes Gericht';
+  if (editId) {
+    const r = customRecipes.find(x => x.id === editId);
+    if (!r) return;
+    document.getElementById('cName').value = r.name;
+    document.getElementById('cEmoji').value = r.em;
+    document.getElementById('cTime').value = r.time;
+    document.getElementById('cTags').value = r.tags.join(', ');
+    document.getElementById('cIngredients').value = r.ingredients.map(i => `${i.amount}; ${i.name}`).join('\n');
+    document.getElementById('cSteps').value = (prepCache[r.id] || []).join('\n');
+  } else {
+    document.getElementById('cName').value = '';
+    document.getElementById('cEmoji').value = '🍽️';
+    document.getElementById('cTime').value = '';
+    document.getElementById('cTags').value = '';
+    document.getElementById('cIngredients').value = '';
+    document.getElementById('cSteps').value = '';
+  }
+  document.getElementById('customOverlay').classList.add('open');
+}
+
+function closeCustomRecipe() {
+  document.getElementById('customOverlay').classList.remove('open');
+}
+
+function saveCustomRecipe() {
+  const name = document.getElementById('cName').value.trim();
+  if (!name) { showToast('Bitte einen Namen eingeben'); return; }
+  const em = document.getElementById('cEmoji').value.trim() || '🍽️';
+  const time = parseInt(document.getElementById('cTime').value) || 30;
+  const tags = document.getElementById('cTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const ingLines = document.getElementById('cIngredients').value.split('\n').filter(l=>l.trim());
+  const ingredients = ingLines.map(l => {
+    const parts = l.split(';');
+    return { em: '🥄', name: (parts[1]||parts[0]).trim(), amount: parts.length>1 ? parts[0].trim() : '' };
+  });
+  const steps = document.getElementById('cSteps').value.split('\n').filter(l=>l.trim());
+
+  if (editingCustomId) {
+    // Bearbeiten
+    const idx = customRecipes.findIndex(x => x.id === editingCustomId);
+    if (idx > -1) {
+      customRecipes[idx] = { ...customRecipes[idx], name, em, time, tags: tags.length ? tags : ['Eigenes'], ingredients };
+      if (steps.length > 0) prepCache[editingCustomId] = steps;
+    }
+    saveCustomToStorage();
+    closeCustomRecipe();
+    closeManageCustom();
+    showToast(`"${name}" aktualisiert ✓`);
+    renderPickerList();
+    render();
+  } else {
+    // Neu erstellen
+    const recipe = { id: nextCustomId++, name, em, time, tags: tags.length ? tags : ['Eigenes'], ingredients, custom: true };
+    customRecipes.push(recipe);
+    if (steps.length > 0) prepCache[recipe.id] = steps;
+    saveCustomToStorage();
+    closeCustomRecipe();
+    showToast(`"${name}" hinzugefügt ✓`);
+    renderPickerList();
+  }
+}
+
+function deleteCustomRecipe(id) {
+  const r = customRecipes.find(x => x.id === id);
+  if (!r) return;
+  customRecipes = customRecipes.filter(x => x.id !== id);
+  Object.keys(plan).forEach(k => { if (plan[k].recipeId === id) delete plan[k]; });
+  saveCustomToStorage();
+  renderManageList();
+  renderPickerList();
+  render();
+  showToast(`"${r.name}" gelöscht`);
+}
+
+function openManageCustom() {
+  renderManageList();
+  document.getElementById('manageOverlay').classList.add('open');
+}
+
+function closeManageCustom() {
+  document.getElementById('manageOverlay').classList.remove('open');
+}
+
+function renderManageList(confirmDeleteId = null) {
+  const el = document.getElementById('manageList');
+  if (customRecipes.length === 0) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:12px 0;text-align:center">Noch keine eigenen Gerichte erstellt.</div>';
+    return;
+  }
+  el.innerHTML = customRecipes.map(r => {
+    const isConfirming = confirmDeleteId === r.id;
+    return `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:22px">${r.em}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500;color:var(--text)">${r.name}</div>
+        <div style="font-size:11px;color:var(--text3)">${r.time} Min · ${r.tags.join(', ')}</div>
+      </div>
+      ${isConfirming ? `
+        <span style="font-size:12px;color:#e63946">Sicher?</span>
+        <button onclick="deleteCustomRecipe(${r.id})" style="background:#e63946;border:none;border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;cursor:pointer;color:#fff;font-family:inherit">Ja, löschen</button>
+        <button onclick="renderManageList()" style="background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;cursor:pointer;color:var(--text2);font-family:inherit">Abbrechen</button>
+      ` : `
+        <button onclick="openCustomRecipe(${r.id})" style="background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;cursor:pointer;color:var(--text2);font-family:inherit">✏️ Bearbeiten</button>
+        <button onclick="renderManageList(${r.id})" style="background:none;border:1px solid #e63946;border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;cursor:pointer;color:#e63946;font-family:inherit">🗑️ Löschen</button>
+      `}
+    </div>`;
+  }).join('');
+}
 
 /* ===================== SUPABASE ===================== */
 const SB_URL = 'https://riminqnqjdmhhbkppyaq.supabase.co';
