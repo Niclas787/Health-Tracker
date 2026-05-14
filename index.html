@@ -171,6 +171,39 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .custom-field{display:flex;flex-direction:column;gap:4px}
 .custom-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-weight:500}
 .custom-badge{font-size:10px;background:var(--accent-light);color:var(--accent);padding:1px 6px;border-radius:10px;font-weight:500;margin-left:5px}
+
+/* TABS */
+.page-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
+.page-tab{padding:10px 20px;font-size:14px;font-weight:500;color:var(--text3);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'DM Sans',sans-serif;transition:all .15s}
+.page-tab:hover{color:var(--text2)}
+.page-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.page{display:none}
+.page.active{display:block}
+
+/* SHOPPING LIST */
+.shop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.shop-header h2{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400}
+.shop-actions{display:flex;gap:8px}
+.shop-clear-btn{background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif}
+.shop-clear-btn:hover{background:var(--surface2)}
+.shop-from-plan-btn{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.shop-from-plan-btn:hover{opacity:.88}
+.shop-add-form{display:flex;gap:8px;margin-bottom:1.2rem}
+.shop-add-form input{flex:1;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text)}
+.shop-add-form input:focus{outline:none;border-color:var(--accent)}
+.shop-add-form button{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.shop-category{margin-bottom:1.2rem}
+.shop-category-title{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-weight:500;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.shop-items{display:flex;flex-direction:column;gap:4px}
+.shop-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);transition:opacity .15s}
+.shop-item.checked{opacity:.45}
+.shop-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.shop-item-name{flex:1;font-size:13px;color:var(--text)}
+.shop-item.checked .shop-item-name{text-decoration:line-through;color:var(--text3)}
+.shop-item-amount{font-size:12px;color:var(--text3)}
+.shop-item-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0;line-height:1}
+.shop-item-del:hover{color:var(--text2)}
+.shop-empty{text-align:center;padding:2rem;color:var(--text3);font-size:14px}
 </style>
 </head>
 <body>
@@ -194,22 +227,45 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 </header>
 
 <main class="main">
-  <div class="week-header">
-    <h2 id="weekTitle">Diese Woche</h2>
-    <span id="weekRange"></span>
+  <!-- Tab Navigation -->
+  <div class="page-tabs">
+    <button class="page-tab active" onclick="switchTab('plan')">🗓 Wochenplan</button>
+    <button class="page-tab" onclick="switchTab('shop')">🛒 Einkaufsliste</button>
   </div>
 
-  <!-- Persons -->
-  <div class="persons-bar">
-    <label>Personen:</label>
-    <div class="person-tags" id="personTags"></div>
-    <div class="add-person-form">
-      <input type="text" id="newPersonInput" placeholder="Name…" maxlength="18" onkeydown="if(event.key==='Enter')addPerson()">
-      <button class="add-person-btn" onclick="addPerson()">+ Hinzufügen</button>
+  <!-- PLAN PAGE -->
+  <div class="page active" id="page-plan">
+    <div class="week-header">
+      <h2 id="weekTitle">Diese Woche</h2>
+      <span id="weekRange"></span>
     </div>
+    <div class="persons-bar">
+      <label>Personen:</label>
+      <div class="person-tags" id="personTags"></div>
+      <div class="add-person-form">
+        <input type="text" id="newPersonInput" placeholder="Name…" maxlength="18" onkeydown="if(event.key==='Enter')addPerson()">
+        <button class="add-person-btn" onclick="addPerson()">+ Hinzufügen</button>
+      </div>
+    </div>
+    <div class="days-list" id="daysList"></div>
   </div>
 
-  <div class="days-list" id="daysList"></div>
+  <!-- SHOPPING PAGE -->
+  <div class="page" id="page-shop">
+    <div class="shop-header">
+      <h2>🛒 Einkaufsliste</h2>
+      <div class="shop-actions">
+        <button class="shop-from-plan-btn" onclick="importFromPlan()">📋 Aus Wochenplan</button>
+        <button class="shop-clear-btn" onclick="clearChecked()">✓ Erledigte löschen</button>
+        <button class="shop-clear-btn" onclick="clearAll()" style="color:#e63946;border-color:#e63946">Alle löschen</button>
+      </div>
+    </div>
+    <div class="shop-add-form">
+      <input type="text" id="shopInput" placeholder="z.B. Milch 1L oder 500g Hackfleisch" onkeydown="if(event.key==='Enter')addShopItem()">
+      <button onclick="addShopItem()">+ Hinzufügen</button>
+    </div>
+    <div id="shopList"></div>
+  </div>
 </main>
 
 <!-- Picker overlay -->
@@ -1270,6 +1326,207 @@ removePerson = function(id) {
   Object.keys(plan).forEach(k => { if (plan[k].personId === id) plan[k].personId = null; });
   savePersonsToDB(); renderPersonsBar(); render();
 };
+
+/* ===================== EMOJI MAP ===================== */
+const FOOD_EMOJIS = [
+  // Fleisch
+  {em:'🥩', words:['hackfleisch','rind','rindfleisch','steak','filet','schnitzel','gulasch','lamm','kalb','schwein','speck','bacon','wurst','salsiccia','salami','schinken','pulled','entrecote','medaillon','roulade','gyros','kebab','bratwurst','mett','leberkäse','fleisch']},
+  {em:'🍗', words:['hähnchen','chicken','geflügel','hühnchen','hähnchenbrust','pute','truthahn','ente','gans']},
+  {em:'🥓', words:['pancetta','guanciale','speckstreifen']},
+  {em:'🍖', words:['knochen','keule','schenkel','braten','schweinebraten','rippchen','spareribs']},
+  // Fisch & Meeresfrüchte
+  {em:'🐟', words:['lachs','fisch','forelle','kabeljau','thunfisch','tilapia','barsch','zander','sardine','hering','makrele','rotbarsch']},
+  {em:'🍤', words:['garnelen','garnele','krabben','shrimp','langusten']},
+  {em:'🐚', words:['muscheln','venusmuscheln','miesmuscheln','jakobsmuscheln','austern']},
+  // Gemüse
+  {em:'🧅', words:['zwiebel','zwiebeln','schalotten','schalotte','frühlingszwiebeln']},
+  {em:'🧄', words:['knoblauch','knobi']},
+  {em:'🥕', words:['karotte','karotten','möhre','möhren','rübe','pastinake']},
+  {em:'🍅', words:['tomate','tomaten','tomatenmark','tomatensoße','passata','kirschtomate']},
+  {em:'🥦', words:['brokkoli','broccoli']},
+  {em:'🫑', words:['paprika','peperoni','peperoncino']},
+  {em:'🥒', words:['gurke','gurken','zucchini','cornichons']},
+  {em:'🍆', words:['aubergine','auberginen']},
+  {em:'🥬', words:['salat','spinat','pak choi','mangold','feldsalat','rucola','eisbergsalat','kopfsalat']},
+  {em:'🌿', words:['basilikum','koriander','petersilie','rosmarin','thymian','minze','dill','lorbeer','majoran','oregano','estragon','schnittlauch','bärlauch','salbei','kräuter']},
+  {em:'🌽', words:['mais','maiskolben','maiskörner']},
+  {em:'🥔', words:['kartoffel','kartoffeln','kartoffelkloß','kartoffelklöße','kartoffelpüree','pommes','rösti','knödel','süßkartoffel']},
+  {em:'🎃', words:['kürbis','hokkaido','butternut']},
+  {em:'🍄', words:['pilze','champignons','steinpilze','pfifferlinge','pilz','shiitake']},
+  {em:'🫘', words:['bohnen','kichererbsen','linsen','erbsen','kidney','cannellini','edamame']},
+  // Obst
+  {em:'🍋', words:['zitrone','zitronen','limette','limetten','zitronensaft']},
+  {em:'🍊', words:['orange','orangen','orangensaft','mandarine','clementine']},
+  {em:'🍍', words:['ananas']},
+  {em:'🍓', words:['erdbeere','erdbeeren','himbeere','himbeeren']},
+  {em:'🫐', words:['heidelbeere','blaubeere','blaubeeren','johannisbeere','beeren']},
+  {em:'🍇', words:['trauben','weintrauben','rosinen']},
+  {em:'🍌', words:['banane','bananen']},
+  {em:'🍉', words:['wassermelone','melone','honigmelone']},
+  {em:'🍑', words:['pfirsich','nektarine','aprikose']},
+  {em:'🍒', words:['kirsche','kirschen','sauerkirsche']},
+  {em:'🥭', words:['mango']},
+  {em:'🥝', words:['kiwi']},
+  {em:'🥑', words:['avocado']},
+  {em:'🍏', words:['apfel','äpfel','apfelsaft','apfelmus']},
+  {em:'🍐', words:['birne','birnen']},
+  // Milchprodukte & Eier
+  {em:'🥛', words:['milch','buttermilch','vollmilch','pflanzenmilch','hafermilch','mandelmilch','sojamilch']},
+  {em:'🧀', words:['käse','parmesan','mozzarella','ricotta','gruyère','gouda','cheddar','pecorino','halloumi','feta','frischkäse','emmentaler','camembert','brie','bergkäse','raclette']},
+  {em:'🧈', words:['butter','butterschmalz','margarine']},
+  {em:'🍦', words:['joghurt','quark','skyr']},
+  {em:'🥚', words:['ei','eier','eigelb','eiweiß']},
+  {em:'🫙', words:['sahne','sauerrahm','schmand','crème fraîche','kondensmilch','kokosmilch']},
+  // Getreide & Pasta
+  {em:'🍝', words:['pasta','nudeln','spaghetti','penne','rigatoni','tagliatelle','linguine','fusilli','farfalle','orecchiette','pappardelle','gnocchi','tortellini','lasagne','cannelloni','ditalini','reisnudeln']},
+  {em:'🍚', words:['reis','basmati','jasmin','sushi-reis','risotto','arborio','wildreis']},
+  {em:'🌾', words:['mehl','weizenmehl','semmelbrösel','paniermehl','couscous','haferflocken','dinkel','gerste','polenta','stärke','backpulver','hefe','sesam']},
+  {em:'🍞', words:['brot','brötchen','buns','burger-buns','toast','pita','fladenbrot','ciabatta','baguette','laugenstange','toastbrot']},
+  // Süßigkeiten & Backwaren
+  {em:'🍫', words:['schokolade','schokoriegel','kakaopulver','kakao','nutella','schoko','zartbitter','vollmilchschokolade','praline','pralinen','trüffel']},
+  {em:'🍬', words:['bonbon','bonbons','gummibärchen','gummis','weingummi','lakritz','lutschbonbon','drops','haribo']},
+  {em:'🍭', words:['lollipop','lolli','zuckerstange','kandis']},
+  {em:'🍰', words:['kuchen','torte','käsekuchen','gugelhupf','brownie','tiramisu','cheesecake','tarte','streuselkuchen']},
+  {em:'🧁', words:['muffin','cupcake']},
+  {em:'🍩', words:['donut','berliner','krapfen']},
+  {em:'🍪', words:['keks','kekse','cookies','spekulatius','lebkuchen']},
+  {em:'🥐', words:['croissant','plunder','blätterteig']},
+  {em:'🍮', words:['pudding','panna cotta','mousse','wackelpudding','grießbrei']},
+  {em:'🍨', words:['speiseeis','eiscreme','sorbet','gelato']},
+  {em:'🧇', words:['waffel','pancake','pfannkuchen','crêpe']},
+  // Snacks
+  {em:'🥨', words:['brezel','laugenstange','salzstangen','erdnussflips']},
+  {em:'🍿', words:['popcorn']},
+  {em:'🥜', words:['erdnüsse','nüsse','mandeln','cashews','walnüsse','haselnüsse','pinienkerne','pistazien','nussmischung','erdnussbutter','mandelmus']},
+  {em:'🧆', words:['chips','kartoffelchips','cornflakes','müsli','granola','reiswaffeln','cracker','nussriegel','müsliriegel']},
+  // Getränke
+  {em:'💧', words:['wasser','mineralwasser','sprudelwasser','leitungswasser','tonic water']},
+  {em:'🧃', words:['saft','traubensaft','multivitamin','nektar','smoothie']},
+  {em:'🥤', words:['cola','limonade','fanta','sprite','limo','softdrink','energy drink','eistee','eiskaffee']},
+  {em:'☕', words:['kaffee','espresso','cappuccino','latte','filterkaffee','instantkaffee','kaffeepulver','kaffeebohnen']},
+  {em:'🍵', words:['tee','grüner tee','schwarztee','kräutertee','kamillentee','pfefferminztee','früchtetee','chai']},
+  {em:'🍺', words:['bier','dunkelbier','weizenbier','pils','radler','malzbier']},
+  {em:'🍷', words:['rotwein','weißwein','wein','rosé','sekt','champagner','prosecco','cava']},
+  {em:'🍹', words:['cocktail','mojito','longdrink','aperol','spritz']},
+  {em:'🧋', words:['bubble tea','matcha']},
+  {em:'🥃', words:['whisky','rum','gin','wodka','schnaps','likör','brandy','cognac']},
+  // Saucen & Gewürze
+  {em:'🫒', words:['olivenöl','sesamöl','rapsöl','sonnenblumenöl']},
+  {em:'🥫', words:['sojasauce','fischsauce','worcestersauce','ketchup','bbq-sauce','tabasco','sambal','dosentomaten']},
+  {em:'🌶️', words:['chili','chilischote','sriracha','cayenne','harissa']},
+  {em:'🧂', words:['salz','pfeffer','meersalz','muskatnuss','zimt','kreuzkümmel','curry','kurkuma','ingwer','kardamom','kümmel','fenchel','anis','vanille','gewürz','garam','za']},
+  {em:'🍯', words:['honig','ahornsirup','agavensirup','palmzucker','sirup','marmelade','konfitüre','gelee','zucker']},
+  {em:'🍋', words:['essig','apfelessig','balsamico','reisessig','weißweinessig']},
+  // Brühe & Fond
+  {em:'🫕', words:['brühe','fond','hühnerbrühe','rinderbrühe','gemüsebrühe','rinderfond','geflügelfond','bouillon']},
+  // Hygiene & Haushalt
+  {em:'🧴', words:['shampoo','duschgel','spülmittel','waschmittel','weichspüler','deo','bodylotion','creme','seife','handseife']},
+  {em:'🧻', words:['toilettenpapier','küchenrolle','papiertücher','taschentücher','servietten']},
+  {em:'🪥', words:['zahnbürste','zahnpasta','mundwasser','zahnseide']},
+  {em:'🧹', words:['besen','wischmopp','putzmittel','allzweckreiniger','badreiniger','wc-reiniger']},
+  {em:'🧽', words:['schwamm','spülbürste','topfkratzer']},
+  {em:'🗑️', words:['müllbeutel','abfallbeutel']},
+  {em:'🧼', words:['seifenstück','kernseife']},
+  // Sonstiges
+  {em:'🧊', words:['eiswürfel']},
+  {em:'🫙', words:['tomatenmark','tahini','miso','paste','senf','remoulade','mayonnaise','mayo','aioli','hummus','pesto']},
+];
+
+function getEmojiForItem(name) {
+  const lower = name.toLowerCase();
+  for (const entry of FOOD_EMOJIS) {
+    if (entry.words.some(w => lower.includes(w))) return entry.em;
+  }
+  return '🛒';
+}
+
+/* ===================== TABS ===================== */
+function switchTab(tab) {
+  document.querySelectorAll('.page-tab').forEach((b,i) => b.classList.toggle('active', (tab==='plan'&&i===0)||(tab==='shop'&&i===1)));
+  document.getElementById('page-plan').classList.toggle('active', tab==='plan');
+  document.getElementById('page-shop').classList.toggle('active', tab==='shop');
+  document.querySelector('.week-nav').style.display = tab==='shop' ? 'none' : 'flex';
+  document.getElementById('suggestAllBtn').style.display = tab==='shop' ? 'none' : 'flex';
+  if (tab==='shop') renderShopList();
+}
+
+/* ===================== SHOPPING LIST ===================== */
+let shopItems = JSON.parse(localStorage.getItem('wochenplan_shop') || '[]');
+let nextShopId = shopItems.length > 0 ? Math.max(...shopItems.map(i=>i.id)) + 1 : 1;
+
+function saveShop() { localStorage.setItem('wochenplan_shop', JSON.stringify(shopItems)); }
+
+function addShopItem() {
+  const inp = document.getElementById('shopInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  const em = getEmojiForItem(val);
+  shopItems.push({ id: nextShopId++, name: val, amount: '', checked: false, cat: 'Manuell', em });
+  inp.value = '';
+  saveShop(); renderShopList();
+}
+
+function toggleShopItem(id) {
+  const item = shopItems.find(i=>i.id===id);
+  if (item) { item.checked = !item.checked; saveShop(); renderShopList(); }
+}
+
+function deleteShopItem(id) {
+  shopItems = shopItems.filter(i=>i.id!==id);
+  saveShop(); renderShopList();
+}
+
+function clearChecked() { shopItems = shopItems.filter(i=>!i.checked); saveShop(); renderShopList(); }
+function clearAll() { shopItems = []; saveShop(); renderShopList(); }
+
+function importFromPlan() {
+  const days = getWeekDays(weekOffset);
+  let added = 0;
+  days.forEach(d => {
+    const entry = plan[dateKey(d)];
+    if (!entry) return;
+    const recipe = getAllRecipes().find(r=>r.id===entry.recipeId);
+    if (!recipe) return;
+    recipe.ingredients.forEach(ing => {
+      const exists = shopItems.some(i=>i.name.toLowerCase()===ing.name.toLowerCase());
+      if (!exists) {
+        const em = ing.em || getEmojiForItem(ing.name);
+        shopItems.push({ id: nextShopId++, name: ing.name, amount: ing.amount, checked: false, cat: recipe.name, em });
+        added++;
+      }
+    });
+  });
+  saveShop(); renderShopList();
+  showToast(added > 0 ? `${added} Zutaten importiert ✓` : 'Alle Zutaten bereits vorhanden');
+}
+
+function renderShopList() {
+  const el = document.getElementById('shopList');
+  if (!el) return;
+  if (shopItems.length === 0) {
+    el.innerHTML = '<div class="shop-empty">🛒 Noch keine Einträge.<br><span style="font-size:12px">Füge Sachen hinzu oder importiere aus dem Wochenplan.</span></div>';
+    return;
+  }
+  const cats = {};
+  shopItems.forEach(item => { if (!cats[item.cat]) cats[item.cat]=[]; cats[item.cat].push(item); });
+  el.innerHTML = Object.entries(cats).map(([cat, items]) => `
+    <div class="shop-category">
+      <div class="shop-category-title">
+        <span>${cat}</span>
+        <span>${items.filter(i=>i.checked).length}/${items.length} erledigt</span>
+      </div>
+      <div class="shop-items">
+        ${items.map(item=>`
+          <div class="shop-item${item.checked?' checked':''}" onclick="toggleShopItem(${item.id})">
+            <input type="checkbox" ${item.checked?'checked':''} onclick="event.stopPropagation();toggleShopItem(${item.id})">
+            <span style="font-size:18px;line-height:1;flex-shrink:0">${item.em||'🛒'}</span>
+            <span class="shop-item-name">${item.name}</span>
+            ${item.amount?`<span class="shop-item-amount">${item.amount}</span>`:''}
+            <button class="shop-item-del" onclick="event.stopPropagation();deleteShopItem(${item.id})">&#215;</button>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
 
 /* ===================== DARK MODE ===================== */
 function toggleDark() {
