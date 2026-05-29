@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wochenplan Abendessen</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f2ec;--surface:#fff;--surface2:#f0ede6;
+  --accent:#2d6a4f;--accent-light:#d8f0e6;
+  --danger:#e63946;--danger-light:#fde8ea;
+  --warn:#f4a261;--warn-light:#fef0e4;
+  --text:#1a1a18;--text2:#5a5a55;--text3:#9a9a94;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --radius:14px;--radius-sm:8px;
+}
+html.dark{
+  --bg:#111210;--surface:#1a1c1a;--surface2:#222422;
+  --accent:#4ade80;--accent-light:#14291e;
+  --danger:#ff6b75;--danger-light:#2a1214;
+  --warn:#f4a261;--warn-light:#2a1e0a;
+  --text:#e8ebe8;--text2:#9aa09a;--text3:#5a605a;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+}
+.dark-toggle{background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);width:34px;height:34px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:background .15s}
+.dark-toggle:hover{background:var(--surface2)}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:20}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo-text{font-family:'DM Serif Display',serif;font-size:20px}
+.header-right{display:flex;align-items:center;gap:10px}
+.suggest-all-btn{display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.suggest-all-btn:hover{opacity:.88}
+.suggest-all-btn:disabled{opacity:.5;cursor:not-allowed}
+.spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.week-nav{display:flex;align-items:center;gap:8px}
+.week-nav button{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);width:34px;height:34px;cursor:pointer;font-size:18px;color:var(--text2);display:flex;align-items:center;justify-content:center;transition:background .15s}
+.week-nav button:hover{background:#e4e0d8}
+.week-label{font-size:13px;color:var(--text2);min-width:130px;text-align:center;font-weight:500}
+
+/* ─── ADMIN LOGIN DROPDOWN ─── */
+.admin-btn-wrap{position:relative}
+.admin-icon-btn{background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);width:34px;height:34px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--text3);transition:all .15s}
+.admin-icon-btn:hover{background:var(--surface2);color:var(--text2)}
+.admin-icon-btn.active{background:var(--danger);border-color:var(--danger);color:#fff}
+.admin-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;width:230px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;animation:popIn .15s ease;display:none}
+.admin-dropdown.open{display:block}
+@keyframes popIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.admin-dropdown h4{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em}
+.admin-pw-field{display:flex;gap:6px}
+.admin-pw-field input{flex:1;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--surface2);color:var(--text)}
+.admin-pw-field input:focus{outline:none;border-color:var(--accent)}
+.admin-pw-field button{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.admin-error{font-size:11px;color:var(--danger);margin-top:6px;display:none}
+.admin-logged-in{display:none;align-items:center;justify-content:space-between}
+.admin-logged-in span{font-size:12px;color:var(--accent);font-weight:500}
+.admin-logout-btn{font-size:11px;background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:4px 10px;cursor:pointer;color:var(--text3);font-family:'DM Sans',sans-serif}
+.admin-logout-btn:hover{background:var(--surface2)}
+.admin-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:var(--danger);color:#fff;padding:1px 6px;border-radius:20px;margin-left:4px;vertical-align:middle}
+
+/* MAIN */
+.main{max-width:800px;margin:0 auto;padding:2rem 1.5rem}
+.week-header{margin-bottom:1.5rem;display:flex;align-items:baseline;gap:12px}
+.week-header h2{font-family:'DM Serif Display',serif;font-size:26px;font-weight:400}
+.week-header span{font-size:13px;color:var(--text3)}
+.days-list{display:flex;flex-direction:column;gap:12px}
+
+/* PERSONS BAR */
+.persons-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.persons-bar label{font-size:13px;color:var(--text2);font-weight:500;margin-right:4px}
+.person-tags{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.person-tag{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);font-size:12px;background:var(--surface2)}
+.person-tag .dot{width:8px;height:8px;border-radius:50%}
+.add-person-form{display:flex;gap:6px}
+.add-person-form input{border:1px solid var(--border2);border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);width:110px}
+.add-person-form input:focus{outline:none;border-color:var(--accent)}
+.add-person-btn{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.remove-person-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1;padding:0}
+
+/* DAY CARD */
+.day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:slideIn .3s ease both}
+.day-card.today{border-color:var(--accent);border-width:1.5px}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.day-head{display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.day-card.today .day-head{background:var(--accent-light)}
+.day-num{font-family:'DM Serif Display',serif;font-size:32px;line-height:1;min-width:40px}
+.day-card.today .day-num{color:var(--accent)}
+.day-name{font-size:15px;font-weight:500}
+.day-date-full{font-size:12px;color:var(--text3);margin-top:1px}
+.today-badge{background:var(--accent);color:#fff;font-size:11px;font-weight:500;padding:3px 11px;border-radius:20px}
+.day-head-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.day-suggest-btn{display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .12s}
+.day-suggest-btn:hover{background:var(--surface)}
+.day-suggest-btn:disabled{opacity:.4;cursor:not-allowed}
+.mini-spin{width:11px;height:11px;border:1.5px solid rgba(0,0,0,.15);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+
+/* DINNER CELL */
+.dinner-cell{padding:16px 20px;cursor:pointer;transition:background .12s;min-height:72px}
+.dinner-cell:hover{background:#fafaf8}
+.dinner-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-weight:500;margin-bottom:6px}
+.dinner-content{display:flex;align-items:center;gap:10px}
+.dinner-emoji{font-size:22px;line-height:1}
+.dinner-info{flex:1}
+.dinner-name{font-size:14px;font-weight:500;color:var(--text)}
+.dinner-person{font-size:12px;color:var(--text3);margin-top:2px;display:flex;align-items:center;gap:4px}
+.dinner-person .pdot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dinner-empty{font-size:13px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:0;line-height:1}
+.del-btn:hover{color:var(--text2)}
+.ai-suggestion{margin-top:6px;display:flex;align-items:center;gap:6px}
+.ai-chip{font-size:11px;color:var(--accent);background:var(--accent-light);padding:2px 8px;border-radius:20px;display:flex;align-items:center;gap:4px;max-width:160px;overflow:hidden}
+.ai-chip-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-accept-btn{font-size:11px;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:4px;padding:1px 7px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .1s;white-space:nowrap}
+.ai-accept-btn:hover{background:var(--accent);color:#fff}
+.loading-chip{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;margin-top:6px}
+
+/* MODALS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.picker{background:var(--surface);border-radius:var(--radius);width:380px;max-width:95vw;padding:20px;border:1px solid var(--border);animation:popIn .18s ease}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.modal-head h3{font-size:15px;font-weight:500}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);line-height:1}
+.search-box{width:100%;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface2);margin-bottom:10px}
+.search-box:focus{outline:none;border-color:var(--accent)}
+.recipe-list{display:flex;flex-direction:column;gap:5px;max-height:320px;overflow-y:auto}
+.recipe-list::-webkit-scrollbar{width:4px}
+.recipe-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.recipe-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:none;cursor:pointer;width:100%;text-align:left;font-family:'DM Sans',sans-serif;transition:background .1s}
+.recipe-btn:hover{background:var(--surface2);border-color:var(--border2)}
+.recipe-btn .em{font-size:20px}
+.recipe-btn .rname{font-size:13px;color:var(--text);flex:1}
+.recipe-btn .arr{font-size:15px;color:var(--text3)}
+.detail-modal{background:var(--surface);border-radius:var(--radius);width:440px;max-width:96vw;max-height:88vh;overflow-y:auto;border:1px solid var(--border);animation:popIn .18s ease}
+.detail-modal::-webkit-scrollbar{width:4px}
+.detail-modal::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.detail-hero{padding:24px 24px 16px;border-bottom:1px solid var(--border)}
+.detail-emoji{font-size:40px;margin-bottom:10px}
+.detail-title{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;margin-bottom:4px}
+.detail-meta{font-size:12px;color:var(--text3)}
+.detail-body{padding:20px 24px}
+.detail-section{margin-bottom:20px}
+.detail-section h4{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-weight:500;margin-bottom:10px}
+.ingredient-list{display:flex;flex-direction:column;gap:5px}
+.ingredient-item{display:flex;align-items:center;gap:10px;font-size:13px;padding:6px 10px;background:var(--surface2);border-radius:var(--radius-sm)}
+.ingredient-item .ing-emoji{font-size:16px;width:22px;text-align:center}
+.ingredient-item .ing-name{flex:1;color:var(--text)}
+.ingredient-item .ing-amount{color:var(--text3);font-size:12px}
+.person-select{display:flex;flex-wrap:wrap;gap:8px}
+.person-option{display:flex;align-items:center;gap:7px;padding:8px 14px;border:1.5px solid var(--border2);border-radius:20px;cursor:pointer;font-size:13px;background:none;font-family:'DM Sans',sans-serif;color:var(--text);transition:all .12s}
+.person-option:hover{background:var(--surface2)}
+.person-option.selected{border-color:var(--accent);background:var(--accent-light);color:var(--accent);font-weight:500}
+.person-option .pdot{width:9px;height:9px;border-radius:50%}
+.no-person-opt{font-size:13px;color:var(--text3);padding:8px 14px;border:1.5px dashed var(--border2);border-radius:20px;cursor:pointer;font-family:'DM Sans',sans-serif;background:none;transition:all .12s}
+.no-person-opt:hover{background:var(--surface2)}
+.no-person-opt.selected{border-color:var(--text3);color:var(--text2)}
+.detail-actions{display:flex;gap:8px;padding:16px 24px;border-top:1px solid var(--border);position:sticky;bottom:0;background:var(--surface)}
+.btn-primary{flex:1;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-primary:hover{opacity:.9}
+.btn-secondary{background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 16px;font-size:13px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-secondary:hover{background:var(--surface2)}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:600px){
+  header{padding:0 1rem;height:auto;flex-wrap:wrap;gap:6px;padding:10px 1rem}
+  .main{padding:1rem}
+  .suggest-all-btn span:last-child{display:none}
+}
+.info-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--accent);background:none;color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;line-height:1;margin-left:4px;flex-shrink:0;transition:all .12s;vertical-align:middle}
+.info-btn:hover{background:var(--accent);color:#fff}
+.prep-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 0 6px;border-top:1px solid var(--border);margin-top:8px;user-select:none}
+.prep-toggle h4{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-weight:500}
+.prep-arrow{font-size:12px;color:var(--text3);transition:transform .2s;display:inline-block;margin-left:6px}
+.prep-arrow.open{transform:rotate(180deg)}
+.prep-loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);padding:8px 0}
+.prep-steps{display:flex;flex-direction:column;gap:10px;padding:6px 0 4px}
+.prep-step{display:flex;gap:10px}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.add-custom-btn{width:100%;margin-top:10px;padding:9px;border:1.5px dashed var(--border2);border-radius:var(--radius-sm);background:none;color:var(--accent);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .12s}
+.add-custom-btn:hover{background:var(--accent-light)}
+.custom-field{display:flex;flex-direction:column;gap:4px}
+.custom-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-weight:500}
+.custom-badge{font-size:10px;background:var(--accent-light);color:var(--accent);padding:1px 6px;border-radius:10px;font-weight:500;margin-left:5px}
+
+/* TABS */
+.page-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
+.page-tab{padding:10px 20px;font-size:14px;font-weight:500;color:var(--text3);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'DM Sans',sans-serif;transition:all .15s}
+.page-tab:hover{color:var(--text2)}
+.page-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.page-tab.admin-tab{color:var(--danger)}
+.page-tab.admin-tab.active{color:var(--danger);border-bottom-color:var(--danger)}
+.page{display:none}
+.page.active{display:block}
+
+/* SHOPPING LIST */
+.shop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.shop-header h2{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400}
+.shop-actions{display:flex;gap:8px}
+.shop-clear-btn{background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif}
+.shop-clear-btn:hover{background:var(--surface2)}
+.shop-from-plan-btn{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.shop-from-plan-btn:hover{opacity:.88}
+.shop-add-form{display:flex;gap:8px;margin-bottom:1.2rem}
+.shop-add-form input{flex:1;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text)}
+.shop-add-form input:focus{outline:none;border-color:var(--accent)}
+.shop-add-form button{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.shop-category{margin-bottom:1.2rem}
+.shop-category-title{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-weight:500;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.shop-items{display:flex;flex-direction:column;gap:4px}
+.shop-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);transition:opacity .15s}
+.shop-item.checked{opacity:.45}
+.shop-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.shop-item-name{flex:1;font-size:13px;color:var(--text)}
+.shop-item.checked .shop-item-name{text-decoration:line-through;color:var(--text3)}
+.shop-item-amount{font-size:12px;color:var(--text3)}
+.shop-item-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0;line-height:1}
+.shop-item-del:hover{color:var(--text2)}
+.shop-empty{text-align:center;padding:2rem;color:var(--text3);font-size:14px}
+
+/* ─── ADMIN PAGES ─── */
+.admin-main{max-width:1000px}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.4rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-num{font-family:'DM Serif Display',serif;font-size:26px;line-height:1.1}
+.stat-label{font-size:11px;color:var(--text3);margin-top:2px}
+.stat-card.danger .stat-num{color:var(--danger)}
+.stat-card.warn .stat-num{color:var(--warn)}
+.stat-card.ok .stat-num{color:var(--accent)}
+.admin-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap}
+.admin-toolbar-title{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;flex:1}
+.abtn{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:var(--radius-sm);padding:7px 13px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.abtn:hover{opacity:.85}
+.abtn-primary{background:var(--accent);color:#fff}
+.abtn-danger{background:var(--danger);color:#fff}
+.abtn-outline{background:none;border:1px solid var(--border2);color:var(--text2)}
+.search-inp{border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);width:190px}
+.search-inp:focus{outline:none;border-color:var(--accent)}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:600px}
+thead{background:var(--surface2)}
+th{padding:9px 13px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 13px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.ip-chip{font-family:'DM Mono','Courier New',monospace;font-size:11px;background:var(--surface2);padding:3px 8px;border-radius:5px;display:inline-block}
+.ip-chip.banned{background:var(--danger-light);color:var(--danger)}
+.loc-cell{font-size:12px}
+.loc-city{color:var(--text2);font-weight:500}
+.loc-isp{font-size:11px;color:var(--text3)}
+.page-chip{font-size:11px;color:var(--accent);background:var(--accent-light);padding:2px 7px;border-radius:4px}
+.time-chip{font-size:11px;color:var(--text3);white-space:nowrap}
+.count-chip{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:10px;font-size:11px;font-weight:600;padding:0 6px}
+.count-chip.hi{background:var(--danger-light);color:var(--danger)}
+.count-chip.md{background:var(--warn-light);color:var(--warn)}
+.count-chip.lo{background:var(--surface2);color:var(--text3)}
+.action-btn{border:none;border-radius:var(--radius-sm);padding:4px 10px;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s;white-space:nowrap}
+.ban-btn{background:var(--danger-light);color:var(--danger);border:1px solid transparent}
+.ban-btn:hover{background:var(--danger);color:#fff}
+.unban-btn{background:var(--accent-light);color:var(--accent);border:1px solid transparent}
+.unban-btn:hover{background:var(--accent);color:#fff}
+.empty-td{text-align:center;padding:2.5rem;color:var(--text3);font-size:13px}
+.tbl-spinner{display:flex;flex-direction:column;align-items:center;padding:2rem;gap:8px;color:var(--text3);font-size:13px}
+.spin-sm{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.lookup-wrap{display:flex;flex-direction:column;gap:2px}
+.lookup-loading{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px}
+.spin-xs{width:9px;height:9px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+
+/* BAN MODAL */
+.ban-modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);width:400px;max-width:95vw;animation:popIn .18s ease}
+.bm-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--border)}
+.bm-head h3{font-size:15px;font-weight:500}
+.bm-body{padding:16px 18px}
+.bm-preview{background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px}
+.bm-preview-ip{font-family:'DM Mono','Courier New',monospace;font-size:14px;font-weight:600;color:var(--danger)}
+.bm-preview-loc{font-size:11px;color:var(--text3);margin-top:2px}
+.bm-field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.bm-field label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-weight:500}
+.bm-field input{border:1px solid var(--border2);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface2);color:var(--text)}
+.bm-field input:focus{outline:none;border-color:var(--accent)}
+.bm-actions{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--border)}
+.bm-actions button{flex:1;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif}
+.bm-cancel{background:none;border:1px solid var(--border2) !important;color:var(--text2)}
+.bm-confirm{background:var(--danger);color:#fff}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🍽️</div>
+    <span class="logo-text">Abendessen-Plan</span>
+  </div>
+  <div class="header-right">
+    <button class="dark-toggle" id="darkBtn" onclick="toggleDark()" title="Dark Mode">🌙</button>
+    <button class="suggest-all-btn" id="suggestAllBtn" onclick="suggestAll()">
+      <span>✨</span><span> Woche vorschlagen</span>
+    </button>
+    <span id="syncDot" title="Wird synchronisiert…" style="width:8px;height:8px;border-radius:50%;background:#f4a261;opacity:0;transition:opacity .3s;flex-shrink:0"></span>
+    <div class="week-nav">
+      <button onclick="shiftWeek(-1)">&#8249;</button>
+      <span class="week-label" id="weekLabel"></span>
+      <button onclick="shiftWeek(1)">&#8250;</button>
+    </div>
+
+    <!-- ADMIN LOGIN -->
+    <div class="admin-btn-wrap" id="adminBtnWrap">
+      <button class="admin-icon-btn" id="adminIconBtn" onclick="toggleAdminDropdown()" title="Admin">🔐</button>
+      <div class="admin-dropdown" id="adminDropdown">
+        <!-- Eingeloggt -->
+        <div class="admin-logged-in" id="adminLoggedIn">
+          <span>✅ Admin <span class="admin-badge">aktiv</span></span>
+          <button class="admin-logout-btn" onclick="adminLogout()">Abmelden</button>
+        </div>
+        <!-- Login-Formular -->
+        <div id="adminLoginForm">
+          <h4>Admin-Bereich</h4>
+          <div class="admin-pw-field">
+            <input type="password" id="adminPwInput" placeholder="Passwort…" onkeydown="if(event.key==='Enter')adminLogin()">
+            <button onclick="adminLogin()">OK</button>
+          </div>
+          <div class="admin-error" id="adminPwError">Falsches Passwort</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="main" id="mainWrap">
+  <div class="page-tabs" id="pageTabs">
+    <button class="page-tab active" onclick="switchTab('plan')">🗓 Wochenplan</button>
+    <button class="page-tab" onclick="switchTab('shop')">🛒 Einkaufsliste</button>
+    <!-- Admin-Tabs werden per JS hinzugefügt -->
+  </div>
+
+  <!-- PLAN PAGE -->
+  <div class="page active" id="page-plan">
+    <div class="week-header">
+      <h2 id="weekTitle">Diese Woche</h2>
+      <span id="weekRange"></span>
+    </div>
+    <div class="persons-bar">
+      <label>Personen:</label>
+      <div class="person-tags" id="personTags"></div>
+      <div class="add-person-form">
+        <input type="text" id="newPersonInput" placeholder="Name…" maxlength="18" onkeydown="if(event.key==='Enter')addPerson()">
+        <button class="add-person-btn" onclick="addPerson()">+ Hinzufügen</button>
+      </div>
+    </div>
+    <div class="days-list" id="daysList"></div>
+  </div>
+
+  <!-- SHOPPING PAGE -->
+  <div class="page" id="page-shop">
+    <div class="shop-header">
+      <h2>🛒 Einkaufsliste</h2>
+      <div class="shop-actions">
+        <button class="shop-from-plan-btn" onclick="importFromPlan()">📋 Aus Wochenplan</button>
+        <button class="shop-clear-btn" onclick="clearChecked()">✓ Erledigte löschen</button>
+        <button class="shop-clear-btn" onclick="clearAll()" style="color:#e63946;border-color:#e63946">Alle löschen</button>
+      </div>
+    </div>
+    <div class="shop-add-form">
+      <input type="text" id="shopInput" placeholder="z.B. Milch 1L oder 500g Hackfleisch" onkeydown="if(event.key==='Enter')addShopItem()">
+      <button onclick="addShopItem()">+ Hinzufügen</button>
+    </div>
+    <div id="shopList"></div>
+  </div>
+
+  <!-- ADMIN: BESUCHER-LOG -->
+  <div class="page admin-main" id="page-logs" style="display:none">
+    <div class="stats-bar" id="adminStatsBar">
+      <div class="stat-card ok"><div class="stat-num" id="statTotal">–</div><div class="stat-label">Besuche gesamt</div></div>
+      <div class="stat-card warn"><div class="stat-num" id="statUnique">–</div><div class="stat-label">Eindeutige IPs</div></div>
+      <div class="stat-card danger"><div class="stat-num" id="statBanned">–</div><div class="stat-label">Gesperrte IPs</div></div>
+      <div class="stat-card"><div class="stat-num" id="statToday">–</div><div class="stat-label">Besuche heute</div></div>
+    </div>
+    <div class="admin-toolbar">
+      <span class="admin-toolbar-title">📋 Besucherverlauf</span>
+      <input class="search-inp" id="logSearch" placeholder="IP oder Seite…" oninput="filterLogs()">
+      <button class="abtn abtn-outline" onclick="loadLogs()">↻ Aktualisieren</button>
+      <button class="abtn abtn-danger" onclick="clearOldLogs()">🗑️ Alte löschen</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>IP-Adresse</th><th>Ort / Provider</th><th>Seite</th>
+          <th>Zeitpunkt</th><th>Besuche</th><th>Aktion</th>
+        </tr></thead>
+        <tbody id="logTable"><tr><td colspan="6"><div class="tbl-spinner"><div class="spin-sm"></div>Lädt…</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADMIN: GESPERRTE IPS -->
+  <div class="page admin-main" id="page-bans" style="display:none">
+    <div class="admin-toolbar">
+      <span class="admin-toolbar-title">🚫 Gesperrte IPs</span>
+      <button class="abtn abtn-primary" onclick="openBanModal('')">+ IP manuell sperren</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>IP-Adresse</th><th>Ort / Provider</th><th>Grund</th>
+          <th>Gesperrt am</th><th>Aktion</th>
+        </tr></thead>
+        <tbody id="banTable"><tr><td colspan="5"><div class="tbl-spinner"><div class="spin-sm"></div>Lädt…</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Picker overlay -->
+<div class="overlay" id="pickerOverlay" onclick="overlayClick(event,'pickerOverlay')">
+  <div class="picker" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h3 id="pickerTitle">Gericht wählen</h3>
+      <button class="modal-close" onclick="closePicker()">&#215;</button>
+    </div>
+    <input class="search-box" id="searchBox" placeholder="Suchen…" oninput="renderPickerList()">
+    <div class="recipe-list" id="recipeList"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="add-custom-btn" style="flex:1" onclick="openCustomRecipe(null)">+ Eigenes Gericht erstellen</button>
+      <button class="add-custom-btn" style="flex:1;color:var(--text2)" onclick="openManageCustom()">✏️ Eigene verwalten</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Recipe overlay -->
+<div class="overlay" id="customOverlay" onclick="overlayClick(event,'customOverlay')">
+  <div class="picker" style="max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h3 id="customTitle">Eigenes Gericht</h3>
+      <button class="modal-close" onclick="closeCustomRecipe()">&#215;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="custom-field"><label class="custom-label">Name *</label><input class="search-box" id="cName" placeholder="z.B. Omas Gulasch" style="margin-bottom:0"></div>
+      <div class="custom-field"><label class="custom-label">Emoji</label><input class="search-box" id="cEmoji" placeholder="🍽️" maxlength="2" style="margin-bottom:0;width:70px"></div>
+      <div class="custom-field"><label class="custom-label">Zubereitungszeit (Min)</label><input class="search-box" id="cTime" type="number" placeholder="45" style="margin-bottom:0;width:100px"></div>
+      <div class="custom-field"><label class="custom-label">Kategorie-Tags (kommagetrennt)</label><input class="search-box" id="cTags" placeholder="Fleisch, Klassisch" style="margin-bottom:0"></div>
+      <div class="custom-field"><label class="custom-label">Zutaten (eine pro Zeile, Format: Menge; Name)</label><textarea class="search-box" id="cIngredients" rows="5" placeholder="500 g; Hackfleisch&#10;2 Stück; Zwiebeln" style="margin-bottom:0;resize:vertical;font-family:inherit"></textarea></div>
+      <div class="custom-field"><label class="custom-label">Zubereitung (eine pro Zeile)</label><textarea class="search-box" id="cSteps" rows="5" placeholder="Zwiebeln hacken.&#10;Anbraten." style="margin-bottom:0;resize:vertical;font-family:inherit"></textarea></div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-secondary" onclick="closeCustomRecipe()">Abbrechen</button>
+        <button class="btn-primary" onclick="saveCustomRecipe()">Gericht speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Custom overlay -->
+<div class="overlay" id="manageOverlay" onclick="overlayClick(event,'manageOverlay')">
+  <div class="picker" style="max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div class="modal-head"><h3>Eigene Gerichte verwalten</h3><button class="modal-close" onclick="closeManageCustom()">&#215;</button></div>
+    <div id="manageList"></div>
+  </div>
+</div>
+
+<!-- Detail overlay -->
+<div class="overlay" id="detailOverlay" onclick="overlayClick(event,'detailOverlay')">
+  <div class="detail-modal" onclick="event.stopPropagation()">
+    <div class="detail-hero">
+      <div class="detail-emoji" id="dEmoji"></div>
+      <div class="detail-title" id="dTitle"></div>
+      <div class="detail-meta" id="dMeta"></div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section"><h4>Zutaten (4 Personen)</h4><div class="ingredient-list" id="dIngredients"></div></div>
+      <div class="detail-section"><h4>Zuständige Person</h4><div class="person-select" id="dPersonSelect"></div></div>
+      <div class="detail-section" style="padding-bottom:0">
+        <div class="prep-toggle" id="prepToggle" onclick="togglePrep()">
+          <h4>🍳 Zubereitung <span class="prep-arrow" id="prepArrow">▼</span></h4>
+        </div>
+        <div id="prepBody"></div>
+      </div>
+    </div>
+    <div class="detail-actions">
+      <button class="btn-secondary" onclick="closeDetail()">Schließen</button>
+      <button class="btn-primary" onclick="saveDetail()">Speichern ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ban Modal -->
+<div class="overlay" id="banOverlay" onclick="if(event.target===this)closeBanModal()">
+  <div class="ban-modal" onclick="event.stopPropagation()">
+    <div class="bm-head">
+      <h3>IP sperren</h3>
+      <button class="modal-close" onclick="closeBanModal()">&#215;</button>
+    </div>
+    <div class="bm-body">
+      <div class="bm-preview">
+        <div class="bm-preview-ip" id="bmIpText">–</div>
+        <div class="bm-preview-loc" id="bmLocText">Ort wird geladen…</div>
+      </div>
+      <div class="bm-field">
+        <label>IP-Adresse</label>
+        <input type="text" id="bmIpInput" placeholder="z.B. 91.12.34.56" oninput="onBmIpChange()">
+      </div>
+      <div class="bm-field">
+        <label>Grund (optional)</label>
+        <input type="text" id="bmReasonInput" placeholder="z.B. Spam, Brute-Force…">
+      </div>
+    </div>
+    <div class="bm-actions">
+      <button class="bm-cancel" onclick="closeBanModal()">Abbrechen</button>
+      <button class="bm-confirm" onclick="confirmBan()">🚫 Sperren</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   ADMIN CONFIG
+═══════════════════════════════════════════════ */
+const ADMIN_PASSWORD = 'admin1234'; // ← Hier dein Passwort!
+
+/* ═══════════════════════════════════════════════
+   ADMIN LOGIN / LOGOUT
+═══════════════════════════════════════════════ */
+let adminLoggedIn = sessionStorage.getItem('admin_ok') === '1';
+
+function toggleAdminDropdown() {
+  const dd = document.getElementById('adminDropdown');
+  dd.classList.toggle('open');
+  if (dd.classList.contains('open')) {
+    updateAdminDropdown();
+    if (!adminLoggedIn) setTimeout(()=>document.getElementById('adminPwInput').focus(), 80);
+    // Klick außerhalb schließt
+    setTimeout(()=>document.addEventListener('click', closeAdminDropdownOutside, {once:true}), 10);
+  }
+}
+function closeAdminDropdownOutside(e) {
+  if (!document.getElementById('adminBtnWrap').contains(e.target)) {
+    document.getElementById('adminDropdown').classList.remove('open');
+  }
+}
+function updateAdminDropdown() {
+  document.getElementById('adminLoginForm').style.display = adminLoggedIn ? 'none' : 'block';
+  document.getElementById('adminLoggedIn').style.display  = adminLoggedIn ? 'flex' : 'none';
+  document.getElementById('adminIconBtn').classList.toggle('active', adminLoggedIn);
+}
+function adminLogin() {
+  const pw = document.getElementById('adminPwInput').value;
+  if (pw === ADMIN_PASSWORD) {
+    adminLoggedIn = true;
+    sessionStorage.setItem('admin_ok', '1');
+    document.getElementById('adminPwInput').value = '';
+    document.getElementById('adminPwError').style.display = 'none';
+    updateAdminDropdown();
+    injectAdminTabs();
+    loadAdminData();
+    showToast('Admin-Modus aktiv 🔐');
+    document.getElementById('adminDropdown').classList.remove('open');
+  } else {
+    document.getElementById('adminPwError').style.display = 'block';
+    document.getElementById('adminPwInput').value = '';
+    document.getElementById('adminPwInput').focus();
+  }
+}
+function adminLogout() {
+  adminLoggedIn = false;
+  sessionStorage.removeItem('admin_ok');
+  removeAdminTabs();
+  updateAdminDropdown();
+  switchTab('plan');
+  document.getElementById('adminDropdown').classList.remove('open');
+  showToast('Abgemeldet');
+}
+function injectAdminTabs() {
+  if (document.getElementById('tab-logs')) return;
+  const tabs = document.getElementById('pageTabs');
+  tabs.insertAdjacentHTML('beforeend', `
+    <button class="page-tab admin-tab" id="tab-logs" onclick="switchTab('logs')">📋 Besucher-Log</button>
+    <button class="page-tab admin-tab" id="tab-bans" onclick="switchTab('bans')">🚫 Gesperrte IPs</button>
+  `);
+  document.getElementById('page-logs').style.display = '';
+  document.getElementById('page-bans').style.display = '';
+}
+function removeAdminTabs() {
+  document.getElementById('tab-logs')?.remove();
+  document.getElementById('tab-bans')?.remove();
+  document.getElementById('page-logs').style.display = 'none';
+  document.getElementById('page-bans').style.display = 'none';
+}
+// Auto-restore session
+if (adminLoggedIn) { document.addEventListener('DOMContentLoaded', ()=>{ injectAdminTabs(); updateAdminDropdown(); loadAdminData(); }); }
+
+/* ═══════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════ */
+function switchTab(tab) {
+  const all = ['plan','shop','logs','bans'];
+  all.forEach(t => {
+    const page = document.getElementById('page-'+t);
+    const btn = document.querySelector(`[onclick="switchTab('${t}')"]`);
+    if(page) page.classList.toggle('active', t===tab);
+    if(btn) btn.classList.toggle('active', t===tab);
+  });
+  const isNormalTab = tab === 'plan' || tab === 'shop';
+  const weekNav = document.querySelector('.week-nav');
+  const sugBtn = document.getElementById('suggestAllBtn');
+  if(weekNav) weekNav.style.display = (tab==='shop'||!isNormalTab) ? 'none' : 'flex';
+  if(sugBtn) sugBtn.style.display = isNormalTab && tab==='plan' ? 'flex' : 'none';
+  if(tab==='shop') renderShopList();
+  if(tab==='logs') loadLogs();
+  if(tab==='bans') loadBans();
+  // Admin-Main braucht breiteren Container
+  document.getElementById('mainWrap').style.maxWidth = (tab==='logs'||tab==='bans') ? '1050px' : '800px';
+}
+
+/* ═══════════════════════════════════════════════
+   SUPABASE
+═══════════════════════════════════════════════ */
+const SB_URL = 'https://riminqnqjdmhhbkppyaq.supabase.co';
+const SB_KEY = 'sb_publishable_IedEXhCD4SbN3XLdQ0K7JQ_Tj96ge3C';
+async function sbFetch(path, method='GET', body=null) {
+  const opts = { method, headers: { 'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':method==='POST'?'resolution=merge-duplicates':'' }};
+  if(body) opts.body = JSON.stringify(body);
+  const res = await fetch(SB_URL+'/rest/v1/'+path, opts);
+  if(!res.ok){ const t=await res.text(); throw new Error(t); }
+  if(res.status===204) return null;
+  return res.json();
+}
+
+/* ═══════════════════════════════════════════════
+   IP-LOOKUP CACHE
+═══════════════════════════════════════════════ */
+const ipCache = {};
+async function lookupIP(ip) {
+  if(ipCache[ip]) return ipCache[ip];
+  // Versuche ipwho.is, dann freeipapi.com als Fallback
+  const apis = [
+    async () => { const d = await (await fetch(`https://ipwho.is/${ip}`)).json(); return { city: d.city||'–', country: d.country_code||'', org: d.connection?.isp||d.org||'–' }; },
+    async () => { const d = await (await fetch(`https://freeipapi.com/api/json/${ip}`)).json(); return { city: d.cityName||'–', country: d.countryCode||'', org: d.isp||'–' }; },
+  ];
+  for(const api of apis) {
+    try {
+      const info = await Promise.race([api(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),4000))]);
+      if(info.city !== '–' || info.org !== '–') { ipCache[ip]=info; return info; }
+    } catch {}
+  }
+  const info = { city:'–', country:'', org:'–' };
+  ipCache[ip]=info; return info;
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN DATA
+═══════════════════════════════════════════════ */
+let allLogs = [], allBans = [];
+
+function loadAdminData() { loadLogs(); loadBans(); }
+
+async function loadLogs() {
+  document.getElementById('logTable').innerHTML = '<tr><td colspan="6"><div class="tbl-spinner"><div class="spin-sm"></div>Lädt…</div></td></tr>';
+  try {
+    allLogs = await sbFetch('visitor_logs?select=*&order=visited_at.desc&limit=500') || [];
+    renderLogsTable(allLogs);
+    updateAdminStats();
+    enrichTable(allLogs, 'log');
+  } catch(e) {
+    document.getElementById('logTable').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--danger);font-size:13px">⚠️ ${e.message}</td></tr>`;
+  }
+}
+
+async function loadBans() {
+  document.getElementById('banTable').innerHTML = '<tr><td colspan="5"><div class="tbl-spinner"><div class="spin-sm"></div>Lädt…</div></td></tr>';
+  try {
+    allBans = await sbFetch('banned_ips?select=*&order=banned_at.desc') || [];
+    renderBanTable(allBans);
+    updateAdminStats();
+    enrichTable(allBans, 'ban');
+  } catch(e) {
+    document.getElementById('banTable').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--danger);font-size:13px">⚠️ ${e.message}</td></tr>`;
+  }
+}
+
+function updateAdminStats() {
+  document.getElementById('statTotal').textContent = allLogs.length;
+  document.getElementById('statUnique').textContent = new Set(allLogs.map(r=>r.ip_address)).size;
+  document.getElementById('statBanned').textContent = allBans.length;
+  const today = new Date().toDateString();
+  document.getElementById('statToday').textContent = allLogs.filter(r=>new Date(r.visited_at).toDateString()===today).length;
+}
+
+function filterLogs() {
+  const q = document.getElementById('logSearch').value.toLowerCase();
+  const f = q ? allLogs.filter(r=>r.ip_address.includes(q)||(r.page||'').toLowerCase().includes(q)) : allLogs;
+  renderLogsTable(f);
+  enrichTable(f,'log');
+}
+
+function renderLogsTable(rows) {
+  if(!rows.length){ document.getElementById('logTable').innerHTML='<tr><td colspan="6" class="empty-td">Keine Einträge gefunden.</td></tr>'; return; }
+  const ipCount = {};
+  allLogs.forEach(r=>ipCount[r.ip_address]=(ipCount[r.ip_address]||0)+1);
+  const banned = new Set(allBans.map(b=>b.ip_address));
+  document.getElementById('logTable').innerHTML = rows.map((r,i)=>{
+    const cnt = ipCount[r.ip_address]||1;
+    const cls = cnt>=20?'hi':cnt>=5?'md':'lo';
+    const isBanned = banned.has(r.ip_address);
+    const d = new Date(r.visited_at);
+    const ds = d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+    return `<tr>
+      <td><span class="ip-chip${isBanned?' banned':''}">${r.ip_address}</span></td>
+      <td><div class="lookup-wrap" id="lloc-${i}"><div class="lookup-loading"><div class="spin-xs"></div> lädt…</div></div></td>
+      <td><span class="page-chip">${r.page||'/'}</span></td>
+      <td class="time-chip">${ds}</td>
+      <td><span class="count-chip ${cls}">${cnt}×</span></td>
+      <td>${isBanned
+        ?`<button class="action-btn unban-btn" onclick="unbanIP('${r.ip_address}')">✓ Entsperren</button>`
+        :`<button class="action-btn ban-btn" onclick="openBanModal('${r.ip_address}')">🚫 Sperren</button>`
+      }</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderBanTable(rows) {
+  if(!rows.length){ document.getElementById('banTable').innerHTML='<tr><td colspan="5" class="empty-td">🎉 Keine gesperrten IPs.</td></tr>'; return; }
+  document.getElementById('banTable').innerHTML = rows.map((r,i)=>{
+    const d = new Date(r.banned_at);
+    const ds = d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+    return `<tr>
+      <td><span class="ip-chip banned">${r.ip_address}</span></td>
+      <td><div class="lookup-wrap" id="bloc-${i}"><div class="lookup-loading"><div class="spin-xs"></div> lädt…</div></div></td>
+      <td style="font-size:12px;color:var(--text2)">${r.reason||'–'}</td>
+      <td class="time-chip">${ds}</td>
+      <td><button class="action-btn unban-btn" onclick="unbanIP('${r.ip_address}')">✓ Entsperren</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function enrichTable(rows, type) {
+  const seen = new Set();
+  for(let i=0;i<Math.min(rows.length,40);i++){
+    const ip = rows[i].ip_address;
+    const elId = type==='log' ? 'lloc-'+i : 'bloc-'+i;
+    const el = document.getElementById(elId);
+    if(!el) continue;
+    const info = await lookupIP(ip);
+    el.innerHTML = `<span class="loc-city">${info.city}${info.country?', '+info.country:''}</span><div class="loc-isp">${info.org}</div>`;
+    if(!seen.has(ip)){ seen.add(ip); await new Promise(r=>setTimeout(r,130)); }
+  }
+}
+
+async function clearOldLogs() {
+  if(!confirm('Logs älter als 30 Tage löschen?')) return;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
+  try { await sbFetch('visitor_logs?visited_at=lt.'+cutoff.toISOString(),'DELETE'); showToast('Alte Logs gelöscht ✓'); loadLogs(); }
+  catch(e){ showToast('⚠️ '+e.message); }
+}
+
+/* BAN MODAL */
+function openBanModal(ip) {
+  document.getElementById('bmIpInput').value = ip;
+  document.getElementById('bmReasonInput').value = '';
+  document.getElementById('bmIpText').textContent = ip||'–';
+  document.getElementById('bmLocText').textContent = 'Ort wird geladen…';
+  document.getElementById('banOverlay').classList.add('open');
+  if(ip) lookupIP(ip).then(info=>{
+    document.getElementById('bmLocText').textContent = `${info.city}${info.country?', '+info.country:''} — ${info.org}`;
+  });
+}
+function onBmIpChange() {
+  const v = document.getElementById('bmIpInput').value.trim();
+  document.getElementById('bmIpText').textContent = v||'–';
+  if(v) lookupIP(v).then(info=>{
+    document.getElementById('bmLocText').textContent = `${info.city}${info.country?', '+info.country:''} — ${info.org}`;
+  });
+}
+function closeBanModal(){ document.getElementById('banOverlay').classList.remove('open'); }
+async function confirmBan() {
+  const ip = document.getElementById('bmIpInput').value.trim();
+  const reason = document.getElementById('bmReasonInput').value.trim();
+  if(!ip){ showToast('Bitte IP eingeben'); return; }
+  try {
+    await sbFetch('banned_ips','POST',[{ip_address:ip,reason:reason||null}]);
+    closeBanModal(); showToast(`${ip} gesperrt 🚫`);
+    await loadBans(); renderLogsTable(allLogs);
+  } catch(e){ showToast('⚠️ '+e.message); }
+}
+async function unbanIP(ip) {
+  if(!confirm(`${ip} wirklich entsperren?`)) return;
+  try {
+    await sbFetch('banned_ips?ip_address=eq.'+encodeURIComponent(ip),'DELETE');
+    showToast(`${ip} entsperrt ✓`); await loadBans(); renderLogsTable(allLogs);
+  } catch(e){ showToast('⚠️ '+e.message); }
+}
+
+/* ═══════════════════════════════════════════════
+   VISITOR LOGGING
+═══════════════════════════════════════════════ */
+async function logVisitAndCheckBan() {
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    const d = await r.json();
+    const ip = d.ip;
+    const bans = await sbFetch('banned_ips?ip_address=eq.'+encodeURIComponent(ip)+'&select=ip_address');
+    if(bans && bans.length > 0) {
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:DM Sans,sans-serif;background:#f5f2ec;gap:12px"><div style="font-size:48px">🚫</div><h2 style="font-size:22px">Zugriff gesperrt</h2><p style="color:#5a5a55;font-size:14px">Deine IP-Adresse wurde gesperrt.</p></div>';
+      return;
+    }
+    await sbFetch('visitor_logs','POST',[{ ip_address:ip, page:window.location.pathname, user_agent:navigator.userAgent }]);
+  } catch(e) {}
+}
+logVisitAndCheckBan();
+
+/* ═══════════════════════════════════════════════
+   REST DES BESTEHENDEN CODES
+═══════════════════════════════════════════════ */
+const WEEKDAYS=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const PERSON_COLORS=['#e76f51','#2a9d8f','#e9c46a','#6a67ce','#f4a261','#264653','#e63946','#43aa8b'];
+const RECIPES=[{id:1,name:'Spaghetti Bolognese',em:'🍝',time:40,tags:['Pasta','Fleisch'],ingredients:[{em:'🍝',name:'Spaghetti',amount:'400 g'},{em:'🥩',name:'Hackfleisch',amount:'500 g'},{em:'🧅',name:'Zwiebel',amount:'2 Stück'},{em:'🧄',name:'Knoblauch',amount:'3 Zehen'},{em:'🍅',name:'Tomaten (Dose)',amount:'2 × 400 g'},{em:'🫒',name:'Olivenöl',amount:'3 EL'},{em:'🌿',name:'Basilikum',amount:'1 Bund'},{em:'🧀',name:'Parmesan',amount:'60 g'}]},{id:2,name:'Hähnchen Curry',em:'🍛',time:35,tags:['Geflügel','Asiatisch'],ingredients:[{em:'🍗',name:'Hähnchenbrust',amount:'600 g'},{em:'🥛',name:'Kokosmilch',amount:'400 ml'},{em:'🫑',name:'Paprika',amount:'2 Stück'},{em:'🧅',name:'Zwiebel',amount:'1 Stück'},{em:'🧄',name:'Knoblauch',amount:'2 Zehen'},{em:'🫙',name:'Curry-Paste',amount:'2 EL'},{em:'🍚',name:'Basmati-Reis',amount:'300 g'},{em:'🌿',name:'Koriander',amount:'½ Bund'}]},{id:3,name:'Grillsteak & Gemüse',em:'🥩',time:25,tags:['Fleisch','Grill'],ingredients:[{em:'🥩',name:'Ribeye-Steak',amount:'4 × 200 g'},{em:'🥦',name:'Brokkoli',amount:'1 Kopf'},{em:'🥕',name:'Karotten',amount:'4 Stück'},{em:'🧄',name:'Knoblauch',amount:'2 Zehen'},{em:'🫒',name:'Olivenöl',amount:'4 EL'},{em:'🌿',name:'Rosmarin',amount:'2 Zweige'},{em:'🧂',name:'Meersalz',amount:'nach Bedarf'}]},{id:4,name:'Lachs & Kartoffeln',em:'🐟',time:30,tags:['Fisch'],ingredients:[{em:'🐟',name:'Lachsfilet',amount:'4 × 180 g'},{em:'🥔',name:'Kartoffeln',amount:'800 g'},{em:'🍋',name:'Zitrone',amount:'1 Stück'},{em:'🧄',name:'Knoblauch',amount:'2 Zehen'},{em:'🫒',name:'Olivenöl',amount:'3 EL'},{em:'🌿',name:'Dill',amount:'1 Bund'},{em:'🧈',name:'Butter',amount:'40 g'}]},{id:5,name:'Gemüsepfanne',em:'🫑',time:20,tags:['Vegetarisch','Schnell'],ingredients:[{em:'🫑',name:'Paprika (mix)',amount:'3 Stück'},{em:'🥦',name:'Brokkoli',amount:'1 Kopf'},{em:'🧅',name:'Zwiebel',amount:'2 Stück'},{em:'🥕',name:'Karotten',amount:'3 Stück'},{em:'🍄',name:'Champignons',amount:'250 g'},{em:'🫒',name:'Olivenöl',amount:'3 EL'},{em:'🥫',name:'Sojasauce',amount:'2 EL'},{em:'🍚',name:'Reis',amount:'300 g'}]},{id:6,name:'Pasta Arrabiata',em:'🍝',time:25,tags:['Pasta','Vegetarisch'],ingredients:[{em:'🍝',name:'Penne',amount:'400 g'},{em:'🍅',name:'Tomaten (Dose)',amount:'2 × 400 g'},{em:'🌶️',name:'Chili',amount:'2 Stück'},{em:'🧄',name:'Knoblauch',amount:'4 Zehen'},{em:'🫒',name:'Olivenöl',amount:'4 EL'},{em:'🌿',name:'Petersilie',amount:'1 Bund'},{em:'🧀',name:'Parmesan',amount:'50 g'}]},{id:7,name:'Schnitzel & Salat',em:'🍽️',time:30,tags:['Fleisch','Klassisch'],ingredients:[{em:'🥩',name:'Schweineschnitzel',amount:'4 × 180 g'},{em:'🥚',name:'Eier',amount:'2 Stück'},{em:'🍞',name:'Semmelbrösel',amount:'150 g'},{em:'🌾',name:'Mehl',amount:'80 g'},{em:'🧈',name:'Butterschmalz',amount:'100 g'},{em:'🥗',name:'Gemischter Salat',amount:'1 Kopf'},{em:'🍋',name:'Zitrone',amount:'1 Stück'}]},{id:8,name:'Tacos',em:'🌮',time:30,tags:['Mexikanisch'],ingredients:[{em:'🌮',name:'Taco-Schalen',amount:'12 Stück'},{em:'🥩',name:'Hackfleisch',amount:'500 g'},{em:'🫑',name:'Paprika',amount:'2 Stück'},{em:'🧅',name:'Rote Zwiebel',amount:'1 Stück'},{em:'🧀',name:'Cheddar',amount:'150 g'},{em:'🥬',name:'Salat',amount:'½ Kopf'},{em:'🍅',name:'Tomaten',amount:'2 Stück'},{em:'🥑',name:'Avocado',amount:'2 Stück'},{em:'🍋',name:'Limette',amount:'1 Stück'}]},{id:9,name:'Burger',em:'🍔',time:30,tags:['Fleisch','Schnell'],ingredients:[{em:'🥩',name:'Burger-Patties',amount:'4 × 180 g'},{em:'🍞',name:'Burger-Buns',amount:'4 Stück'},{em:'🧀',name:'Cheddar',amount:'4 Scheiben'},{em:'🥬',name:'Salat',amount:'4 Blätter'},{em:'🍅',name:'Tomate',amount:'1 Stück'},{em:'🧅',name:'Rote Zwiebel',amount:'1 Stück'},{em:'🥒',name:'Gurke',amount:'½ Stück'},{em:'🫙',name:'Sauce',amount:'nach Bedarf'}]},{id:10,name:'Pizza Margherita',em:'🍕',time:45,tags:['Vegetarisch','Italienisch'],ingredients:[{em:'🌾',name:'Pizzateig',amount:'600 g'},{em:'🍅',name:'Tomatensoße',amount:'300 ml'},{em:'🧀',name:'Mozzarella',amount:'400 g'},{em:'🌿',name:'Basilikum',amount:'1 Bund'},{em:'🫒',name:'Olivenöl',amount:'2 EL'},{em:'🧂',name:'Salz & Pfeffer',amount:'nach Bedarf'}]}];
+const PREP_STEPS={1:['Zwiebeln und Knoblauch fein hacken. Spaghetti al dente kochen.','Olivenöl erhitzen, Zwiebeln glasig dünsten.','Hackfleisch anbraten bis es braun ist.','Knoblauch und Tomaten hinzufügen, 20 Min köcheln.','Mit Basilikum verfeinern.','Spaghetti abgießen und mit der Sauce vermischen.','Mit Parmesan servieren.'],2:['Hähnchen in Stücke schneiden.','Zwiebeln, Knoblauch, Paprika anschwitzen.','Curry-Paste mitrösten, Kokosmilch angießen.','Hähnchen hinein, 15 Min köcheln.','Reis kochen.','Mit Koriander garnieren.'],3:['Steaks 30 Min vorher aus dem Kühlschrank.','Grill stark erhitzen.','Gemüse mit Öl und Salz mischen.','Steaks 3–4 Min je Seite grillen.','Gemüse parallel rösten.','5 Min ruhen lassen.','Mit Rosmarin servieren.']};
+let weekOffset=0,plan={},suggestions={},persons=[{id:1,name:'Mama',color:PERSON_COLORS[0]},{id:2,name:'Papa',color:PERSON_COLORS[1]}],nextPersonId=3,activePickerKey=null,activeDetailKey=null,detailSelectedPerson=null;
+function getMonday(o){const n=new Date(),day=n.getDay(),m=new Date(n);m.setDate(n.getDate()+(day===0?-6:1-day)+o*7);m.setHours(0,0,0,0);return m;}
+function getWeekDays(o){const m=getMonday(o);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return d;});}
+function isToday(d){const t=new Date();return d.getDate()===t.getDate()&&d.getMonth()===t.getMonth()&&d.getFullYear()===t.getFullYear();}
+function dateKey(d){return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;}
+function getKW(d){const j=new Date(d.getFullYear(),0,4),w=new Date(j);w.setDate(j.getDate()-(j.getDay()||7)+1);return Math.ceil(((d-w)/86400000+1)/7);}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function renderPersonsBar(){document.getElementById('personTags').innerHTML=persons.map(p=>`<span class="person-tag"><span class="dot" style="background:${p.color}"></span>${p.name}<button class="remove-person-btn" onclick="removePerson(${p.id})">&#215;</button></span>`).join('');}
+function render(){
+  const days=getWeekDays(weekOffset);const first=days[0],last=days[6];
+  document.getElementById('weekLabel').textContent=weekOffset===0?'Diese Woche':weekOffset===-1?'Letzte Woche':weekOffset===1?'Nächste Woche':'KW '+getKW(first);
+  document.getElementById('weekTitle').textContent=weekOffset===0?'Diese Woche':weekOffset===-1?'Letzte Woche':weekOffset===1?'Nächste Woche':'Woche '+getKW(first);
+  document.getElementById('weekRange').textContent=`${first.getDate()}. ${MONTHS[first.getMonth()]} – ${last.getDate()}. ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+  const list=document.getElementById('daysList');list.innerHTML='';
+  days.forEach((d,di)=>{
+    const today=isToday(d),key=dateKey(d),entry=plan[key],recipe=entry?getAllRecipes().find(r=>r.id===entry.recipeId):null,person=entry?.personId?persons.find(p=>p.id===entry.personId):null,sug=suggestions[key];
+    const card=document.createElement('div');card.className='day-card'+(today?' today':'');card.style.animationDelay=(di*0.04)+'s';
+    card.innerHTML=`<div class="day-head"><div class="day-num">${d.getDate()}</div><div class="day-info"><div class="day-name">${WEEKDAYS[d.getDay()]}</div><div class="day-date-full">${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}</div></div><div class="day-head-right">${today?'<span class="today-badge">Heute</span>':''}<button class="day-suggest-btn" onclick="suggestDay('${key}',${di})">✨ Vorschlagen</button></div></div>`;
+    const cell=document.createElement('div');cell.className='dinner-cell';
+    let inner=`<div class="dinner-label">Abendessen</div><div class="dinner-content">`;
+    if(recipe){inner+=`<span class="dinner-emoji">${recipe.em}</span><div class="dinner-info"><div class="dinner-name">${recipe.name}</div>${person?`<div class="dinner-person"><span class="pdot" style="background:${person.color}"></span>${person.name} kocht</div>`:'<div class="dinner-person">Niemand zugewiesen</div>'}</div><button class="del-btn" onclick="delMeal(event,'${key}')">&#215;</button>`;}
+    else{inner+=`<span class="dinner-empty"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><line x1="6" y1="1" x2="6" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Gericht hinzufügen</span>`;}
+    inner+=`</div>`;
+    if(!recipe&&sug){if(sug==='loading'){inner+=`<div class="loading-chip"><div class="mini-spin"></div> KI denkt nach…</div>`;}else{inner+=`<div class="ai-suggestion"><div class="ai-chip">✨ <span class="ai-chip-text">${sug.em} ${sug.name}</span></div><button class="ai-accept-btn" onclick="acceptSug(event,'${key}',${sug.id})">✓ Übernehmen</button></div>`;}}
+    cell.innerHTML=inner;cell.addEventListener('click',e=>{if(e.target.closest('.del-btn')||e.target.closest('.ai-accept-btn'))return;if(recipe)openDetail(key);else openPicker(key,WEEKDAYS[d.getDay()]);});
+    card.appendChild(cell);list.appendChild(card);
+  });
+}
+function delMeal(e,key){e.stopPropagation();delete plan[key];deletePlanEntry(key);render();}
+function acceptSug(e,key,id){e.stopPropagation();plan[key]={recipeId:id,personId:null};delete suggestions[key];savePlanEntry(key,plan[key]);render();showToast('Gericht übernommen ✓');}
+function shiftWeek(n){weekOffset+=n;render();}
+function openPicker(key,dayName){activePickerKey=key;document.getElementById('pickerTitle').textContent=`${dayName} – Gericht wählen`;document.getElementById('searchBox').value='';renderPickerList();document.getElementById('pickerOverlay').classList.add('open');}
+function closePicker(){document.getElementById('pickerOverlay').classList.remove('open');activePickerKey=null;}
+function renderPickerList(){const q=document.getElementById('searchBox').value.toLowerCase();const all=getAllRecipes();const f=all.filter(r=>!q||r.name.toLowerCase().includes(q)||r.tags.some(t=>t.toLowerCase().includes(q)));document.getElementById('recipeList').innerHTML=f.map(r=>`<button class="recipe-btn" onclick="pickRecipe(${r.id})"><span class="em">${r.em}</span><span class="rname">${r.name}${r.custom?'<span class="custom-badge">Eigenes</span>':''}</span><span style="font-size:11px;color:var(--text3);margin-right:6px">${r.time} Min</span><span class="arr">›</span></button>`).join('');}
+function pickRecipe(id){const key=activePickerKey;plan[key]={recipeId:id,personId:null};delete suggestions[key];savePlanEntry(key,plan[key]);closePicker();openDetail(key);}
+function openDetail(key){activeDetailKey=key;const entry=plan[key];const recipe=getAllRecipes().find(r=>r.id===entry.recipeId);if(!recipe)return;detailSelectedPerson=entry.personId||null;currentRecipeForPrep=recipe;prepOpen=false;document.getElementById('prepArrow').className='prep-arrow';document.getElementById('prepBody').innerHTML='';document.getElementById('dEmoji').textContent=recipe.em;document.getElementById('dTitle').textContent=recipe.name;document.getElementById('dMeta').textContent=`⏱ ${recipe.time} Min  •  ${recipe.tags.join(', ')}`;document.getElementById('dIngredients').innerHTML=recipe.ingredients.length?recipe.ingredients.map(i=>`<div class="ingredient-item"><span class="ing-emoji">${i.em}</span><span class="ing-name">${i.name}</span><span class="ing-amount">${i.amount}</span></div>`).join(''):'<div style="font-size:13px;color:var(--text3)">Keine Zutaten.</div>';renderPersonSelect();document.getElementById('detailOverlay').classList.add('open');}
+function closeDetail(){document.getElementById('detailOverlay').classList.remove('open');activeDetailKey=null;}
+function renderPersonSelect(){document.getElementById('dPersonSelect').innerHTML=`<button class="no-person-opt${detailSelectedPerson===null?' selected':''}" onclick="selectPerson(null)">Niemand</button>`+persons.map(p=>`<button class="person-option${detailSelectedPerson===p.id?' selected':''}" onclick="selectPerson(${p.id})"><span class="pdot" style="background:${p.color}"></span>${p.name}</button>`).join('');}
+function selectPerson(id){detailSelectedPerson=id;renderPersonSelect();}
+let prepCache={},prepOpen=false,currentRecipeForPrep=null;
+function togglePrep(){prepOpen=!prepOpen;document.getElementById('prepArrow').className='prep-arrow'+(prepOpen?' open':'');const body=document.getElementById('prepBody');if(!prepOpen){body.innerHTML='';return;}if(!currentRecipeForPrep)return;if(prepCache[currentRecipeForPrep.id]){renderPrepSteps(prepCache[currentRecipeForPrep.id]);}else{fetchPreparation(currentRecipeForPrep);}}
+function renderPrepSteps(steps){document.getElementById('prepBody').innerHTML=`<div class="prep-steps">${steps.map((s,i)=>`<div class="prep-step"><div class="step-num">${i+1}</div><div>${s}</div></div>`).join('')}</div>`;}
+async function fetchPreparation(recipe){document.getElementById('prepBody').innerHTML=`<div class="prep-loading"><div class="mini-spin"></div> Lädt…</div>`;await new Promise(r=>setTimeout(r,200));const steps=PREP_STEPS[recipe.id]||['Alle Zutaten vorbereiten.','Hauptzutaten schneiden und würzen.','In Öl oder Butter anbraten.','Zutaten zusammenführen und garen.','Abschmecken.','Servieren.'];prepCache[recipe.id]=steps;renderPrepSteps(steps);}
+function smartSuggest(items){const used=new Set([...Object.values(plan).map(e=>e.recipeId),...Object.values(suggestions).filter(s=>s!=='loading').map(s=>s.id)]);const recentTags=Object.values(plan).map(e=>{const r=RECIPES.find(x=>x.id===e.recipeId);return r?r.tags:[];}).flat();items.forEach(item=>{let cands=RECIPES.filter(r=>!used.has(r.id));const pref=cands.filter(r=>!r.tags.some(t=>recentTags.includes(t)));if(pref.length>0)cands=pref;const pick=cands[Math.floor(Math.random()*cands.length)];if(pick){suggestions[item.key]=pick;used.add(pick.id);pick.tags.forEach(t=>recentTags.push(t));}});}
+function suggestDay(key,di){const days=getWeekDays(weekOffset);const d=days[di];if(plan[key]){showToast('Tag bereits geplant');return;}smartSuggest([{key,dayName:WEEKDAYS[d.getDay()]}]);render();}
+function suggestAll(){const days=getWeekDays(weekOffset);const items=days.map(d=>({key:dateKey(d),dayName:WEEKDAYS[d.getDay()]})).filter(x=>!plan[x.key]);if(!items.length){showToast('Alle Tage bereits geplant');return;}smartSuggest(items);render();showToast('Vorschläge bereit – ✓ zum Übernehmen klicken');}
+function overlayClick(e,id){if(e.target===document.getElementById(id)){if(id==='pickerOverlay')closePicker();else if(id==='detailOverlay')closeDetail();else if(id==='customOverlay')closeCustomRecipe();else if(id==='manageOverlay')closeManageCustom();}}
+let customRecipes=JSON.parse(localStorage.getItem('wochenplan_custom')||'[]'),nextCustomId=customRecipes.length>0?Math.max(...customRecipes.map(r=>r.id))+1:1000,editingCustomId=null;
+function getAllRecipes(){return[...RECIPES,...customRecipes];}
+function saveCustomToStorage(){localStorage.setItem('wochenplan_custom',JSON.stringify(customRecipes));}
+function openCustomRecipe(editId){editingCustomId=editId||null;document.getElementById('customTitle').textContent=editId?'Gericht bearbeiten':'Eigenes Gericht';if(editId){const r=customRecipes.find(x=>x.id===editId);if(!r)return;document.getElementById('cName').value=r.name;document.getElementById('cEmoji').value=r.em;document.getElementById('cTime').value=r.time;document.getElementById('cTags').value=r.tags.join(', ');document.getElementById('cIngredients').value=r.ingredients.map(i=>`${i.amount}; ${i.name}`).join('\n');document.getElementById('cSteps').value=(prepCache[r.id]||[]).join('\n');}else{document.getElementById('cName').value='';document.getElementById('cEmoji').value='🍽️';document.getElementById('cTime').value='';document.getElementById('cTags').value='';document.getElementById('cIngredients').value='';document.getElementById('cSteps').value='';}document.getElementById('customOverlay').classList.add('open');}
+function closeCustomRecipe(){document.getElementById('customOverlay').classList.remove('open');}
+function saveCustomRecipe(){const name=document.getElementById('cName').value.trim();if(!name){showToast('Bitte Namen eingeben');return;}const em=document.getElementById('cEmoji').value.trim()||'🍽️';const time=parseInt(document.getElementById('cTime').value)||30;const tags=document.getElementById('cTags').value.split(',').map(t=>t.trim()).filter(Boolean);const ings=document.getElementById('cIngredients').value.split('\n').filter(l=>l.trim()).map(l=>{const p=l.split(';');return{em:'🥄',name:(p[1]||p[0]).trim(),amount:p.length>1?p[0].trim():''};});const steps=document.getElementById('cSteps').value.split('\n').filter(l=>l.trim());if(editingCustomId){const idx=customRecipes.findIndex(x=>x.id===editingCustomId);if(idx>-1){customRecipes[idx]={...customRecipes[idx],name,em,time,tags:tags.length?tags:['Eigenes'],ingredients:ings};if(steps.length>0)prepCache[editingCustomId]=steps;}saveCustomToStorage();closeCustomRecipe();closeManageCustom();showToast(`"${name}" aktualisiert ✓`);renderPickerList();render();}else{const recipe={id:nextCustomId++,name,em,time,tags:tags.length?tags:['Eigenes'],ingredients:ings,custom:true};customRecipes.push(recipe);if(steps.length>0)prepCache[recipe.id]=steps;saveCustomToStorage();closeCustomRecipe();showToast(`"${name}" hinzugefügt ✓`);renderPickerList();}}
+function deleteCustomRecipe(id){const r=customRecipes.find(x=>x.id===id);if(!r)return;customRecipes=customRecipes.filter(x=>x.id!==id);Object.keys(plan).forEach(k=>{if(plan[k].recipeId===id)delete plan[k];});saveCustomToStorage();renderManageList();renderPickerList();render();showToast(`"${r.name}" gelöscht`);}
+function openManageCustom(){renderManageList();document.getElementById('manageOverlay').classList.add('open');}
+function closeManageCustom(){document.getElementById('manageOverlay').classList.remove('open');}
+function renderManageList(confirmDeleteId=null){const el=document.getElementById('manageList');if(customRecipes.length===0){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:12px 0;text-align:center">Noch keine eigenen Gerichte.</div>';return;}el.innerHTML=customRecipes.map(r=>{const c=confirmDeleteId===r.id;return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:22px">${r.em}</span><div style="flex:1"><div style="font-size:13px;font-weight:500">${r.name}</div><div style="font-size:11px;color:var(--text3)">${r.time} Min · ${r.tags.join(', ')}</div></div>${c?`<span style="font-size:12px;color:#e63946">Sicher?</span><button onclick="deleteCustomRecipe(${r.id})" style="background:#e63946;border:none;border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;cursor:pointer;color:#fff;font-family:inherit">Ja</button><button onclick="renderManageList()" style="background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;cursor:pointer;color:var(--text2);font-family:inherit">Nein</button>`:`<button onclick="openCustomRecipe(${r.id})" style="background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;cursor:pointer;color:var(--text2);font-family:inherit">✏️</button><button onclick="renderManageList(${r.id})" style="background:none;border:1px solid #e63946;border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;cursor:pointer;color:#e63946;font-family:inherit">🗑️</button>`}</div>`;}).join('');}
+
+/* SUPABASE PLAN SYNC */
+async function loadFromDB(){showSyncIndicator(true);try{const rows=await sbFetch('wochenplan?select=*');plan={};rows.forEach(r=>{plan[r.id]={recipeId:r.recipe_id,personId:r.person_id};});const prows=await sbFetch('persons?select=*&order=id');if(prows&&prows.length>0){persons=prows.map(r=>({id:r.id,name:r.name,color:r.color}));nextPersonId=Math.max(...persons.map(p=>p.id))+1;}}catch(e){showToast('⚠️ Offline Modus');loadLocalFallback();}showSyncIndicator(false);renderPersonsBar();render();}
+async function savePlanEntry(key,entry){showSyncIndicator(true);try{await sbFetch('wochenplan','POST',[{id:key,recipe_id:entry.recipeId,person_id:entry.personId||null}]);localStorage.setItem('wochenplan_plan',JSON.stringify(plan));}catch(e){showToast('⚠️ Speichern fehlgeschlagen');}showSyncIndicator(false);}
+async function deletePlanEntry(key){showSyncIndicator(true);try{await sbFetch('wochenplan?id=eq.'+encodeURIComponent(key),'DELETE');localStorage.setItem('wochenplan_plan',JSON.stringify(plan));}catch(e){showToast('⚠️ Löschen fehlgeschlagen');}showSyncIndicator(false);}
+async function savePersonsToDB(){showSyncIndicator(true);try{await sbFetch('persons?id=gte.0','DELETE');if(persons.length>0)await sbFetch('persons','POST',persons.map(p=>({id:p.id,name:p.name,color:p.color})));localStorage.setItem('wochenplan_persons',JSON.stringify(persons));}catch(e){showToast('⚠️ Personen speichern fehlgeschlagen');}showSyncIndicator(false);}
+function loadLocalFallback(){try{const p=localStorage.getItem('wochenplan_plan');if(p)plan=JSON.parse(p);const ps=localStorage.getItem('wochenplan_persons');if(ps)persons=JSON.parse(ps);}catch(e){}}
+function showSyncIndicator(a){const el=document.getElementById('syncDot');if(el)el.style.opacity=a?'1':'0';}
+
+function saveDetail(){if(activeDetailKey&&plan[activeDetailKey]){plan[activeDetailKey].personId=detailSelectedPerson;savePlanEntry(activeDetailKey,plan[activeDetailKey]);}closeDetail();render();showToast('Gespeichert ✓');}
+function addPerson(){const inp=document.getElementById('newPersonInput');const name=inp.value.trim();if(!name)return;const color=PERSON_COLORS[nextPersonId%PERSON_COLORS.length];persons.push({id:nextPersonId++,name,color});inp.value='';savePersonsToDB();renderPersonsBar();}
+function removePerson(id){persons=persons.filter(p=>p.id!==id);Object.keys(plan).forEach(k=>{if(plan[k].personId===id)plan[k].personId=null;});savePersonsToDB();renderPersonsBar();render();}
+
+/* SHOPPING */
+let shopItems=JSON.parse(localStorage.getItem('wochenplan_shop')||'[]'),nextShopId=shopItems.length>0?Math.max(...shopItems.map(i=>i.id))+1:1;
+function saveShop(){localStorage.setItem('wochenplan_shop',JSON.stringify(shopItems));}
+function addShopItem(){const inp=document.getElementById('shopInput');const val=inp.value.trim();if(!val)return;shopItems.push({id:nextShopId++,name:val,amount:'',checked:false,cat:'Manuell',em:'🛒'});inp.value='';saveShop();renderShopList();}
+function toggleShopItem(id){const item=shopItems.find(i=>i.id===id);if(item){item.checked=!item.checked;saveShop();renderShopList();}}
+function deleteShopItem(id){shopItems=shopItems.filter(i=>i.id!==id);saveShop();renderShopList();}
+function clearChecked(){shopItems=shopItems.filter(i=>!i.checked);saveShop();renderShopList();}
+function clearAll(){shopItems=[];saveShop();renderShopList();}
+function importFromPlan(){const days=getWeekDays(weekOffset);let added=0;days.forEach(d=>{const entry=plan[dateKey(d)];if(!entry)return;const recipe=getAllRecipes().find(r=>r.id===entry.recipeId);if(!recipe)return;recipe.ingredients.forEach(ing=>{const exists=shopItems.some(i=>i.name.toLowerCase()===ing.name.toLowerCase());if(!exists){shopItems.push({id:nextShopId++,name:ing.name,amount:ing.amount,checked:false,cat:recipe.name,em:ing.em||'🛒'});added++;}});});saveShop();renderShopList();showToast(added>0?`${added} Zutaten importiert ✓`:'Alle bereits vorhanden');}
+function renderShopList(){const el=document.getElementById('shopList');if(!el)return;if(!shopItems.length){el.innerHTML='<div class="shop-empty">🛒 Noch keine Einträge.</div>';return;}const cats={};shopItems.forEach(item=>{if(!cats[item.cat])cats[item.cat]=[];cats[item.cat].push(item);});el.innerHTML=Object.entries(cats).map(([cat,items])=>`<div class="shop-category"><div class="shop-category-title"><span>${cat}</span><span>${items.filter(i=>i.checked).length}/${items.length} erledigt</span></div><div class="shop-items">${items.map(item=>`<div class="shop-item${item.checked?' checked':''}" onclick="toggleShopItem(${item.id})"><input type="checkbox" ${item.checked?'checked':''} onclick="event.stopPropagation();toggleShopItem(${item.id})"><span style="font-size:18px;line-height:1">${item.em||'🛒'}</span><span class="shop-item-name">${item.name}</span>${item.amount?`<span class="shop-item-amount">${item.amount}</span>`:''}<button class="shop-item-del" onclick="event.stopPropagation();deleteShopItem(${item.id})">&#215;</button></div>`).join('')}</div></div>`).join('');}
+
+/* DARK MODE */
+function toggleDark(){const d=document.documentElement.classList.toggle('dark');document.getElementById('darkBtn').textContent=d?'☀️':'🌙';localStorage.setItem('wochenplan_dark',d?'1':'0');}
+if(localStorage.getItem('wochenplan_dark')==='1'){document.documentElement.classList.add('dark');document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('darkBtn');if(b)b.textContent='☀️';});}
+
+/* INIT */
+loadFromDB();
+</script>
+
+</body>
